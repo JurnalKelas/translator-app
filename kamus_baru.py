@@ -18,13 +18,12 @@ c.execute('''CREATE TABLE IF NOT EXISTS dictionary
              (source_word TEXT, target_word TEXT)''')
 conn.commit()
 
-st.title("Aplikasi Web Translator v6 📸🔄🔊")
+st.title("Aplikasi Web Translator v7 📸🔊")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
 tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
-# Input Manual
 with tab_manual:
     with st.form("add_word_form"):
         source = st.text_input("Kata / Frasa Asal (Inggris)")
@@ -37,7 +36,6 @@ with tab_manual:
             conn.commit()
             st.success("Tersimpan!")
 
-# Input Gambar
 with tab_gambar:
     uploaded_file = st.file_uploader("Unggah gambar", type=['png', 'jpg', 'jpeg'])
     if uploaded_file is not None:
@@ -45,7 +43,7 @@ with tab_gambar:
         st.image(img, use_container_width=True)
         
         if st.button("Ekstrak & Simpan"):
-            with st.spinner('Membaca dan membersihkan teks...'):
+            with st.spinner('Membaca teks...'):
                 extracted_text = pytesseract.image_to_string(img)
                 lines = extracted_text.split('\n')
                 saved_count = 0
@@ -55,8 +53,9 @@ with tab_gambar:
                     if pemisah:
                         parts = line.split(pemisah)
                         if len(parts) == 2:
-                            kata_asal = re.sub(r'^[^a-z]+', '', parts[0].lower()).strip()
-                            terjemahan = re.sub(r'^[^a-z]+', '', parts[1].lower()).strip()
+                            # Pembersihan yang lebih ketat
+                            kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
+                            terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
                             
                             if kata_asal and terjemahan:
                                 c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
@@ -65,9 +64,8 @@ with tab_gambar:
                                               (kata_asal, terjemahan))
                                     saved_count += 1
                 conn.commit()
-                st.success(f"{saved_count} frasa/kata bersih berhasil disimpan!")
+                st.success(f"{saved_count} frasa/kata berhasil disimpan!")
 
-# Menu Lihat Database & Reset
 with tab_db:
     st.write("Isi Kamus Anda Saat Ini:")
     c.execute("SELECT source_word, target_word FROM dictionary")
@@ -82,42 +80,44 @@ with tab_db:
     if st.button("🚨 Hapus Semua Data (Reset)"):
         c.execute("DELETE FROM dictionary")
         conn.commit()
-        st.success("Database dikosongkan. Silakan muat ulang (refresh) halaman.")
+        st.success("Database dikosongkan. Silakan refresh.")
 
-# --- Bagian Utama: Terjemahan Dua Arah & Suara ---
+# --- Bagian Utama: Terjemahan ---
 st.header("Terjemahkan Teks")
 
+# PERBAIKAN: Menghapus emoji agar tidak ada salah baca sistem
 arah = st.radio("Pilih Arah Terjemahan:", 
-                ("🇬🇧 Inggris ➡️ 🇮🇩 Indonesia", "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris"), 
+                ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
-text_input = st.text_area("Masukkan kalimat yang ingin diterjemahkan:")
+text_input = st.text_area("Masukkan teks:")
 
 if st.button("Terjemahkan"):
     if text_input:
-        if arah == "🇬🇧 Inggris ➡️ 🇮🇩 Indonesia":
+        if arah == "Inggris ke Indonesia":
             c.execute("SELECT source_word, target_word FROM dictionary ORDER BY LENGTH(source_word) DESC")
-            kode_bahasa = 'id' # Suara bahasa Indonesia untuk hasil terjemahan
+            kode_bahasa = 'id'
         else:
             c.execute("SELECT target_word, source_word FROM dictionary ORDER BY LENGTH(target_word) DESC")
-            kode_bahasa = 'en' # Suara bahasa Inggris untuk hasil terjemahan
+            kode_bahasa = 'en'
             
         dictionary_entries = c.fetchall()
         translated_text = text_input
         
+        # PERBAIKAN: Logika penggantian kata yang lebih santai
         for source, target in dictionary_entries:
-            pattern = r'(?i)\b' + re.escape(source) + r'\b'
-            translated_text = re.sub(pattern, target, translated_text)
+            # Mengganti kata tanpa mempedulikan huruf besar/kecil
+            pattern = re.compile(re.escape(source), re.IGNORECASE)
+            translated_text = pattern.sub(target, translated_text)
                 
         st.info("**Hasil Terjemahan:**")
         st.success(translated_text)
         
-        # --- FITUR PEMUTAR SUARA ---
         try:
             with st.spinner("Membuat suara..."):
                 tts = gTTS(text=translated_text, lang=kode_bahasa)
                 sound_file = BytesIO()
                 tts.write_to_fp(sound_file)
                 st.audio(sound_file)
-        except Exception as e:
-            st.error("Gagal memuat suara. Pastikan ada koneksi internet.")
+        except:
+            st.error("Gagal memuat suara.")
