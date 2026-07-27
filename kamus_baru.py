@@ -6,38 +6,53 @@ from PIL import Image
 import os
 from gtts import gTTS
 from io import BytesIO
+import base64
 
 # --- KONFIGURASI OTOMATIS ---
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. Koneksi Database
+# 1. Koneksi & Upgrade Database (Menambahkan kolom gambar)
 conn = sqlite3.connect('translator.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
              (source_word TEXT, target_word TEXT)''')
+# Mencoba menambahkan kolom gambar jika belum ada
+try:
+    c.execute("ALTER TABLE dictionary ADD COLUMN image_data TEXT")
+except:
+    pass # Abaikan jika kolom sudah ada
 conn.commit()
 
-st.title("Aplikasi Web Translator v7 📸🔊")
+st.title("Aplikasi Web Translator v8 📸🔊🖼️")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
 tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
+# MENU 1: INPUT MANUAL DENGAN GAMBAR
 with tab_manual:
     with st.form("add_word_form"):
         source = st.text_input("Kata / Frasa Asal (Inggris)")
         target = st.text_input("Terjemahan (Indonesia)")
-        submit = st.form_submit_button("Simpan Manual")
+        gambar_kamus = st.file_uploader("Unggah Ilustrasi (Opsional)", type=['png', 'jpg', 'jpeg'])
+        submit = st.form_submit_button("Simpan ke Kamus")
         
         if submit and source and target:
-            c.execute("INSERT INTO dictionary (source_word, target_word) VALUES (?, ?)",
-                      (source.lower().strip(), target.lower().strip()))
+            # Mengubah gambar menjadi kode teks agar bisa disimpan di database
+            image_b64 = ""
+            if gambar_kamus is not None:
+                image_bytes = gambar_kamus.getvalue()
+                image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+                
+            c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
+                      (source.lower().strip(), target.lower().strip(), image_b64))
             conn.commit()
-            st.success("Tersimpan!")
+            st.success("Tersimpan beserta gambarnya!")
 
+# MENU 2: INPUT GAMBAR (OCR)
 with tab_gambar:
-    uploaded_file = st.file_uploader("Unggah gambar", type=['png', 'jpg', 'jpeg'])
+    uploaded_file = st.file_uploader("Unggah gambar daftar teks", type=['png', 'jpg', 'jpeg'])
     if uploaded_file is not None:
         img = Image.open(uploaded_file)
         st.image(img, use_container_width=True)
@@ -53,25 +68,27 @@ with tab_gambar:
                     if pemisah:
                         parts = line.split(pemisah)
                         if len(parts) == 2:
-                            # Pembersihan yang lebih ketat
                             kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
                             terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
                             
                             if kata_asal and terjemahan:
                                 c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
                                 if not c.fetchone():
-                                    c.execute("INSERT INTO dictionary (source_word, target_word) VALUES (?, ?)",
-                                              (kata_asal, terjemahan))
+                                    # OCR tidak menyimpan gambar ilustrasi, jadi dikosongkan
+                                    c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
+                                              (kata_asal, terjemahan, ""))
                                     saved_count += 1
                 conn.commit()
                 st.success(f"{saved_count} frasa/kata berhasil disimpan!")
 
+# MENU 3: DATABASE
 with tab_db:
     st.write("Isi Kamus Anda Saat Ini:")
-    c.execute("SELECT source_word, target_word FROM dictionary")
+    c.execute("SELECT source_word, target_word, image_data FROM dictionary")
     rows = c.fetchall()
     
     if rows:
+        # Menampilkan teks saja di tabel
         st.table({"Bahasa Inggris": [r[0] for r in rows], "Bahasa Indonesia": [r[1] for r in rows]})
     else:
         st.info("Database masih kosong.")
@@ -85,7 +102,6 @@ with tab_db:
 # --- Bagian Utama: Terjemahan ---
 st.header("Terjemahkan Teks")
 
-# PERBAIKAN: Menghapus emoji agar tidak ada salah baca sistem
 arah = st.radio("Pilih Arah Terjemahan:", 
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
@@ -95,24 +111,29 @@ text_input = st.text_area("Masukkan teks:")
 if st.button("Terjemahkan"):
     if text_input:
         if arah == "Inggris ke Indonesia":
-            c.execute("SELECT source_word, target_word FROM dictionary ORDER BY LENGTH(source_word) DESC")
+            c.execute("SELECT source_word, target_word, image_data FROM dictionary ORDER BY LENGTH(source_word) DESC")
             kode_bahasa = 'id'
         else:
-            c.execute("SELECT target_word, source_word FROM dictionary ORDER BY LENGTH(target_word) DESC")
+            c.execute("SELECT target_word, source_word, image_data FROM dictionary ORDER BY LENGTH(target_word) DESC")
             kode_bahasa = 'en'
             
         dictionary_entries = c.fetchall()
         translated_text = text_input
+        gambar_ditemukan = []
         
-        # PERBAIKAN: Logika penggantian kata yang lebih santai
-        for source, target in dictionary_entries:
-            # Mengganti kata tanpa mempedulikan huruf besar/kecil
-            pattern = re.compile(re.escape(source), re.IGNORECASE)
-            translated_text = pattern.sub(target, translated_text)
+        for source, target, img_data in dictionary_entries:
+            pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
+            # Jika kata ditemukan di teks
+            if pattern.search(translated_text):
+                translated_text = pattern.sub(target, translated_text)
+                # Jika kata tersebut punya gambar di database, simpan untuk ditampilkan
+                if img_data:
+                    gambar_ditemukan.append((target, img_data))
                 
         st.info("**Hasil Terjemahan:**")
         st.success(translated_text)
         
+        # 1. TAMPILKAN SUARA
         try:
             with st.spinner("Membuat suara..."):
                 tts = gTTS(text=translated_text, lang=kode_bahasa)
@@ -121,3 +142,15 @@ if st.button("Terjemahkan"):
                 st.audio(sound_file)
         except:
             st.error("Gagal memuat suara.")
+            
+        # 2. TAMPILKAN GAMBAR (Visual Dictionary)
+        if gambar_ditemukan:
+            st.divider()
+            st.write("🖼️ **Ilustrasi Kamus Bergambar:**")
+            
+            # Membuat maksimal 3 gambar berjejer ke samping
+            cols = st.columns(min(len(gambar_ditemukan), 3))
+            for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
+                with cols[idx % 3]:
+                    img_bytes = base64.b64decode(img_b64)
+                    st.image(img_bytes, caption=kata.title(), use_container_width=True)
