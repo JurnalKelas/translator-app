@@ -23,7 +23,7 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v10 🖼️📝🔊")
+st.title("Aplikasi Web Translator v11 🚀")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -99,6 +99,10 @@ arah = st.radio("Pilih Arah Terjemahan:",
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
+# TRIK AJAIB: Kita siapkan ruang kosong khusus untuk gambar di sini
+tempat_gambar = st.empty()
+
+# Kotak input teks sekarang berada di bawah ruang kosong tersebut
 text_input = st.text_area("Masukkan teks:")
 
 if st.button("Terjemahkan"):
@@ -121,16 +125,17 @@ if st.button("Terjemahkan"):
                 if img_data:
                     gambar_ditemukan.append((target, img_data))
         
-        st.write("---") # Garis pembatas untuk memisahkan area hasil
-
-        # 1. TAMPILKAN GAMBAR PALING ATAS
+        # 1. TAMPILKAN GAMBAR (Mengisi ruang kosong di atas kotak input teks!)
         if gambar_ditemukan:
-            cols = st.columns(min(len(gambar_ditemukan), 3))
-            for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
-                with cols[idx % 3]:
-                    img_bytes = base64.b64decode(img_b64)
-                    # Menghapus caption agar gambar langsung menyambung dengan kata asal di bawahnya
-                    st.image(img_bytes, use_container_width=True)
+            with tempat_gambar.container():
+                cols = st.columns(min(len(gambar_ditemukan), 3))
+                for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
+                    with cols[idx % 3]:
+                        img_bytes = base64.b64decode(img_b64)
+                        st.image(img_bytes, use_container_width=True)
+                        
+        # Bagian bawah tombol (Teks Asal, Terjemahan, Suara)
+        st.write("---") 
                 
         # 2. TAMPILKAN KATA ASAL
         st.info("**Kata Asal:**")
