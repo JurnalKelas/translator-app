@@ -23,7 +23,7 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v11 🚀")
+st.title("Aplikasi Web Translator v12 🚀")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -99,10 +99,10 @@ arah = st.radio("Pilih Arah Terjemahan:",
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
-# TRIK AJAIB: Kita siapkan ruang kosong khusus untuk gambar di sini
+# Tempat khusus untuk gambar muncul di atas kotak input
 tempat_gambar = st.empty()
 
-# Kotak input teks sekarang berada di bawah ruang kosong tersebut
+# Kotak input teks
 text_input = st.text_area("Masukkan teks:")
 
 if st.button("Terjemahkan"):
@@ -125,7 +125,7 @@ if st.button("Terjemahkan"):
                 if img_data:
                     gambar_ditemukan.append((target, img_data))
         
-        # 1. TAMPILKAN GAMBAR (Mengisi ruang kosong di atas kotak input teks!)
+        # 1. TAMPILKAN GAMBAR (Di atas kotak input)
         if gambar_ditemukan:
             with tempat_gambar.container():
                 cols = st.columns(min(len(gambar_ditemukan), 3))
@@ -134,18 +134,14 @@ if st.button("Terjemahkan"):
                         img_bytes = base64.b64decode(img_b64)
                         st.image(img_bytes, use_container_width=True)
                         
-        # Bagian bawah tombol (Teks Asal, Terjemahan, Suara)
+        # Garis pembatas hasil terjemahan
         st.write("---") 
-                
-        # 2. TAMPILKAN KATA ASAL
-        st.info("**Kata Asal:**")
-        st.write(text_input)
 
-        # 3. TAMPILKAN HASIL TERJEMAHAN
+        # 2. TAMPILKAN HASIL TERJEMAHAN (Kata asal sudah dihilangkan)
         st.success("**Hasil Terjemahan:**")
         st.write(translated_text)
         
-        # 4. TAMPILKAN TOMBOL SUARA
+        # 3. TAMPILKAN TOMBOL SUARA
         try:
             with st.spinner("Membuat suara..."):
                 tts = gTTS(text=translated_text, lang=kode_bahasa)
