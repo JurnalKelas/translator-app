@@ -4,10 +4,10 @@ import pytesseract
 import re
 from PIL import Image
 import os
+from gtts import gTTS
+from io import BytesIO
 
 # --- KONFIGURASI OTOMATIS ---
-# Jika aplikasi berjalan di Windows (laptop lokal), gunakan jalur ini.
-# Jika di internet (Linux), lewati saja karena akan terdeteksi otomatis.
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
@@ -18,7 +18,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS dictionary
              (source_word TEXT, target_word TEXT)''')
 conn.commit()
 
-st.title("Aplikasi Web Translator v5 📸🔄")
+st.title("Aplikasi Web Translator v6 📸🔄🔊")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -55,7 +55,6 @@ with tab_gambar:
                     if pemisah:
                         parts = line.split(pemisah)
                         if len(parts) == 2:
-                            # MEMBERSIHKAN SIMBOL ANEH: Hanya membuang simbol di awal kalimat
                             kata_asal = re.sub(r'^[^a-z]+', '', parts[0].lower()).strip()
                             terjemahan = re.sub(r'^[^a-z]+', '', parts[1].lower()).strip()
                             
@@ -85,10 +84,9 @@ with tab_db:
         conn.commit()
         st.success("Database dikosongkan. Silakan muat ulang (refresh) halaman.")
 
-# --- Bagian Utama: Terjemahan Dua Arah ---
+# --- Bagian Utama: Terjemahan Dua Arah & Suara ---
 st.header("Terjemahkan Teks")
 
-# TOMBOL PILIHAN ARAH TERJEMAHAN
 arah = st.radio("Pilih Arah Terjemahan:", 
                 ("🇬🇧 Inggris ➡️ 🇮🇩 Indonesia", "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris"), 
                 horizontal=True)
@@ -97,19 +95,29 @@ text_input = st.text_area("Masukkan kalimat yang ingin diterjemahkan:")
 
 if st.button("Terjemahkan"):
     if text_input:
-        # Menyesuaikan pencarian data berdasarkan arah terjemahan
         if arah == "🇬🇧 Inggris ➡️ 🇮🇩 Indonesia":
             c.execute("SELECT source_word, target_word FROM dictionary ORDER BY LENGTH(source_word) DESC")
+            kode_bahasa = 'id' # Suara bahasa Indonesia untuk hasil terjemahan
         else:
             c.execute("SELECT target_word, source_word FROM dictionary ORDER BY LENGTH(target_word) DESC")
+            kode_bahasa = 'en' # Suara bahasa Inggris untuk hasil terjemahan
             
         dictionary_entries = c.fetchall()
         translated_text = text_input
         
-        # Proses penggantian kata/frasa
         for source, target in dictionary_entries:
             pattern = r'(?i)\b' + re.escape(source) + r'\b'
             translated_text = re.sub(pattern, target, translated_text)
                 
         st.info("**Hasil Terjemahan:**")
         st.success(translated_text)
+        
+        # --- FITUR PEMUTAR SUARA ---
+        try:
+            with st.spinner("Membuat suara..."):
+                tts = gTTS(text=translated_text, lang=kode_bahasa)
+                sound_file = BytesIO()
+                tts.write_to_fp(sound_file)
+                st.audio(sound_file)
+        except Exception as e:
+            st.error("Gagal memuat suara. Pastikan ada koneksi internet.")
