@@ -12,7 +12,7 @@ import base64
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. Koneksi & Upgrade Database (Menambahkan kolom gambar)
+# 1. Koneksi & Upgrade Database
 conn = sqlite3.connect('translator.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
@@ -23,13 +23,12 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v9 🖼️📸🔊")
+st.title("Aplikasi Web Translator v10 🖼️📝🔊")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
 tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
-# MENU 1: INPUT MANUAL DENGAN GAMBAR
 with tab_manual:
     with st.form("add_word_form"):
         source = st.text_input("Kata / Frasa Asal (Inggris)")
@@ -48,7 +47,6 @@ with tab_manual:
             conn.commit()
             st.success("Tersimpan beserta gambarnya!")
 
-# MENU 2: INPUT GAMBAR (OCR)
 with tab_gambar:
     uploaded_file = st.file_uploader("Unggah gambar daftar teks", type=['png', 'jpg', 'jpeg'])
     if uploaded_file is not None:
@@ -78,7 +76,6 @@ with tab_gambar:
                 conn.commit()
                 st.success(f"{saved_count} frasa/kata berhasil disimpan!")
 
-# MENU 3: DATABASE
 with tab_db:
     st.write("Isi Kamus Anda Saat Ini:")
     c.execute("SELECT source_word, target_word, image_data FROM dictionary")
@@ -124,21 +121,26 @@ if st.button("Terjemahkan"):
                 if img_data:
                     gambar_ditemukan.append((target, img_data))
         
-        # 1. TAMPILKAN GAMBAR LEBIH DULU (Jika ada)
+        st.write("---") # Garis pembatas untuk memisahkan area hasil
+
+        # 1. TAMPILKAN GAMBAR PALING ATAS
         if gambar_ditemukan:
-            st.write("🖼️ **Ilustrasi:**")
             cols = st.columns(min(len(gambar_ditemukan), 3))
             for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
                 with cols[idx % 3]:
                     img_bytes = base64.b64decode(img_b64)
-                    st.image(img_bytes, caption=kata.title(), use_container_width=True)
-            st.write("---") # Garis pembatas
+                    # Menghapus caption agar gambar langsung menyambung dengan kata asal di bawahnya
+                    st.image(img_bytes, use_container_width=True)
                 
-        # 2. TAMPILKAN TEKS HASIL TERJEMAHAN
-        st.info("**Hasil Terjemahan:**")
-        st.success(translated_text)
+        # 2. TAMPILKAN KATA ASAL
+        st.info("**Kata Asal:**")
+        st.write(text_input)
+
+        # 3. TAMPILKAN HASIL TERJEMAHAN
+        st.success("**Hasil Terjemahan:**")
+        st.write(translated_text)
         
-        # 3. TAMPILKAN TOMBOL SUARA
+        # 4. TAMPILKAN TOMBOL SUARA
         try:
             with st.spinner("Membuat suara..."):
                 tts = gTTS(text=translated_text, lang=kode_bahasa)
