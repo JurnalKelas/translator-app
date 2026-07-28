@@ -36,12 +36,9 @@ conn.commit()
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
 st.markdown("""
 <style>
-    /* Mengubah warna latar belakang utama aplikasi */
     .stApp {
-        background-color: #F0F4F8; /* Warna Biru-Abu Pastel Lembut */
+        background-color: #F0F4F8; 
     }
-    
-    /* Membuat kotak teks tetap putih bersih agar tulisan mudah dibaca */
     .stTextArea textarea {
         background-color: #FFFFFF;
     }
@@ -72,69 +69,77 @@ st.write("---")
 st.title("ALAZKA Smart English Dictionary 📖✨")
 st.caption("Powered by Gemini AI & Voice Recognition")
 
-# --- Bagian Sidebar ---
-st.sidebar.header("Menu Aplikasi")
-tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
+# --- Bagian Sidebar (Dikunci untuk Admin) ---
+st.sidebar.header("Menu Admin ALAZKA")
+# Kotak password, teks yang diketik akan disamarkan menjadi titik-titik
+kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
 
-with tab_manual:
-    with st.form("add_word_form"):
-        source = st.text_input("Kata / Frasa Asal (Inggris)")
-        target = st.text_input("Terjemahan (Indonesia)")
-        gambar_kamus = st.file_uploader("Unggah Ilustrasi (Opsional)", type=['png', 'jpg', 'jpeg'])
-        submit = st.form_submit_button("Simpan ke Kamus Lokal")
-        
-        if submit and source and target:
-            image_b64 = ""
-            if gambar_kamus is not None:
-                image_bytes = gambar_kamus.getvalue()
-                image_b64 = base64.b64encode(image_bytes).decode('utf-8')
-                
-            c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
-                      (source.lower().strip(), target.lower().strip(), image_b64))
-            conn.commit()
-            st.success("Tersimpan beserta gambarnya!")
+# Cek apakah passwordnya benar. SILAKAN GANTI "alazka2026" DENGAN SANDI RAHASIA ANDA
+if kunci_admin == "alazka2026":
+    st.sidebar.success("Akses Admin Terbuka!")
+    tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
-with tab_gambar:
-    uploaded_file = st.file_uploader("Unggah gambar daftar teks", type=['png', 'jpg', 'jpeg'])
-    if uploaded_file is not None:
-        img = Image.open(uploaded_file)
-        st.image(img, use_container_width=True)
-        
-        if st.button("Ekstrak & Simpan"):
-            with st.spinner('Membaca teks...'):
-                extracted_text = pytesseract.image_to_string(img)
-                lines = extracted_text.split('\n')
-                saved_count = 0
-                for line in lines:
-                    pemisah = '=' if '=' in line else ':' if ':' in line else None
-                    if pemisah:
-                        parts = line.split(pemisah)
-                        if len(parts) == 2:
-                            kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
-                            terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
-                            if kata_asal and terjemahan:
-                                c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
-                                if not c.fetchone():
-                                    c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
-                                              (kata_asal, terjemahan, ""))
-                                    saved_count += 1
+    with tab_manual:
+        with st.form("add_word_form"):
+            source = st.text_input("Kata / Frasa Asal (Inggris)")
+            target = st.text_input("Terjemahan (Indonesia)")
+            gambar_kamus = st.file_uploader("Unggah Ilustrasi (Opsional)", type=['png', 'jpg', 'jpeg'])
+            submit = st.form_submit_button("Simpan ke Kamus Lokal")
+            
+            if submit and source and target:
+                image_b64 = ""
+                if gambar_kamus is not None:
+                    image_bytes = gambar_kamus.getvalue()
+                    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+                    
+                c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
+                          (source.lower().strip(), target.lower().strip(), image_b64))
                 conn.commit()
-                st.success(f"{saved_count} frasa/kata berhasil disimpan!")
+                st.success("Tersimpan beserta gambarnya!")
 
-with tab_db:
-    st.write("Isi Kamus Visual Anda Saat Ini:")
-    c.execute("SELECT source_word, target_word, image_data FROM dictionary")
-    rows = c.fetchall()
-    if rows:
-        st.table({"Bahasa Inggris": [r[0] for r in rows], "Bahasa Indonesia": [r[1] for r in rows]})
-    else:
-        st.info("Database masih kosong.")
-        
-    st.divider()
-    if st.button("🚨 Hapus Semua Data (Reset)"):
-        c.execute("DELETE FROM dictionary")
-        conn.commit()
-        st.success("Database dikosongkan. Silakan refresh.")
+    with tab_gambar:
+        uploaded_file = st.file_uploader("Unggah gambar daftar teks", type=['png', 'jpg', 'jpeg'])
+        if uploaded_file is not None:
+            img = Image.open(uploaded_file)
+            st.image(img, use_container_width=True)
+            
+            if st.button("Ekstrak & Simpan"):
+                with st.spinner('Membaca teks...'):
+                    extracted_text = pytesseract.image_to_string(img)
+                    lines = extracted_text.split('\n')
+                    saved_count = 0
+                    for line in lines:
+                        pemisah = '=' if '=' in line else ':' if ':' in line else None
+                        if pemisah:
+                            parts = line.split(pemisah)
+                            if len(parts) == 2:
+                                kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
+                                terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
+                                if kata_asal and terjemahan:
+                                    c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
+                                    if not c.fetchone():
+                                        c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
+                                                  (kata_asal, terjemahan, ""))
+                                        saved_count += 1
+                    conn.commit()
+                    st.success(f"{saved_count} frasa/kata berhasil disimpan!")
+
+    with tab_db:
+        st.write("Isi Kamus Visual Anda Saat Ini:")
+        c.execute("SELECT source_word, target_word, image_data FROM dictionary")
+        rows = c.fetchall()
+        if rows:
+            st.table({"Bahasa Inggris": [r[0] for r in rows], "Bahasa Indonesia": [r[1] for r in rows]})
+        else:
+            st.info("Database masih kosong.")
+            
+        st.divider()
+        if st.button("🚨 Hapus Semua Data (Reset)"):
+            c.execute("DELETE FROM dictionary")
+            conn.commit()
+            st.success("Database dikosongkan. Silakan refresh.")
+else:
+    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu database dan penambahan kata.")
 
 # --- Bagian Utama: Terjemahan Cerdas ---
 st.header("Terjemahkan dengan AI")
