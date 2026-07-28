@@ -13,17 +13,14 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Mengambil SEMUA daftar mesin)
-available_models = []
+# 1. SETUP GEMINI AI (Terkunci pada mesin yang berhasil)
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            available_models.append(m.name)
-    gemini_ready = len(available_models) > 0
+    # Menggunakan mesin yang sudah Anda buktikan berhasil
+    model = genai.GenerativeModel('gemini-3.5-flash-lite')
+    gemini_ready = True
 except Exception as e:
     gemini_ready = False
-    error_setup = str(e)
 
 # 2. KONEKSI DATABASE LOKAL
 conn = sqlite3.connect('translator.db')
@@ -36,20 +33,11 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v17 🚀🤖")
-st.caption("Mode Pemilih Mesin AI Manual")
+st.title("Aplikasi Web Translator v18 🚀✨")
+st.caption("Ditenagai oleh Gemini 3.5 Flash Lite & Kamus Visual Lokal")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
-
-# Menambahkan menu dropdown (pilihan) mesin AI di sidebar
-selected_model = None
-if gemini_ready:
-    st.sidebar.success("✅ API Key Valid!")
-    selected_model = st.sidebar.selectbox("Pilih Mesin AI (Coba satu per satu jika gagal):", available_models)
-else:
-    st.sidebar.error("❌ API Key belum terhubung.")
-
 tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
 with tab_manual:
@@ -107,7 +95,7 @@ with tab_db:
         st.info("Database masih kosong.")
         
     st.divider()
-    if st.button("🚨 Hapus Semua Data (Reset)"):
+    if st.button("🚨 Hapus Semua Data (Reset)") :
         c.execute("DELETE FROM dictionary")
         conn.commit()
         st.success("Database dikosongkan. Silakan refresh.")
@@ -150,24 +138,20 @@ if st.button("Terjemahkan"):
                         st.image(img_bytes, use_container_width=True)
         st.write("---") 
 
-        st.success(f"**Hasil Terjemahan ({selected_model}):**")
+        st.success("**Hasil Terjemahan:**")
         hasil_terjemahan = ""
         
         with st.spinner("AI sedang merangkai kalimat..."):
-            if gemini_ready and selected_model:
+            if gemini_ready:
                 try:
-                    # Menjalankan mesin yang dipilih dari sidebar
-                    model = genai.GenerativeModel(selected_model)
                     response = model.generate_content(prompt_ai)
                     hasil_terjemahan = response.text.strip()
                     st.write(hasil_terjemahan)
                 except Exception as e:
-                    st.error("❌ Mesin ini menolak koneksi. Silakan pilih mesin lain di menu samping (Sidebar).")
-                    st.code(str(e)) 
+                    st.error("Koneksi ke AI terputus. Silakan coba lagi.")
                     hasil_terjemahan = text_input
             else:
-                st.error("❌ Sistem AI gagal disiapkan.")
-                st.code(error_setup if not gemini_ready else "Model belum dipilih")
+                st.error("Sistem AI gagal disiapkan. Pastikan API Key di Streamlit Secrets benar.")
                 hasil_terjemahan = text_input
         
         if hasil_terjemahan:
