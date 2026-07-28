@@ -274,7 +274,6 @@ with tab_kamera_ai:
             with st.spinner("AI sedang mengamati bentuk benda..."):
                 if gemini_ready:
                     try:
-                        # INSTRUKSI AI: Format baku agar sistem mudah memotong teksnya
                         prompt_vision = """
                         Identifikasi benda utama apa yang ada di dalam gambar ini. 
                         Berikan jawaban yang sangat singkat dengan format persis seperti di bawah ini. Jangan tambahkan penjelasan atau kata-kata lain:
@@ -287,23 +286,18 @@ with tab_kamera_ai:
                         hasil_teks = response_vision.text
                         
                         st.success("✅ Gambar berhasil dianalisis!")
-                        # Menampilkan teks lengkap di layar (Indonesia + Inggris + Pelafalan)
                         st.write(hasil_teks)
                         
                         # LOGIKA FILTER: Mencari bagian yang HANYA berisi Bahasa Inggris untuk disuarakan
                         kata_inggris_saja = ""
-                         baris_baris = hasil_teks.split('\n')
+                        baris_baris = hasil_teks.split('\n')
                         for baris in baris_baris:
                             if "Bahasa Inggris:" in baris or "Inggris:" in baris:
-                                # Mengambil tulisan di sebelah kanan tanda ":"
                                 bagian_kanan = baris.split(":", 1)[1]
-                                # Membersihkan spasi dan simbol bintang
                                 kata_inggris_saja = bagian_kanan.replace('*', '').strip()
                                 break
                                 
-                        # Jika berhasil menemukan kata bahasa Inggrisnya
                         if kata_inggris_saja:
-                            # MESIN SUARA diatur menjadi bahasa Inggris (lang='en')
                             tts_vision = gTTS(text=kata_inggris_saja, lang='en')
                             sound_file_vision = BytesIO()
                             tts_vision.write_to_fp(sound_file_vision)
