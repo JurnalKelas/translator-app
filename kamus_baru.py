@@ -48,12 +48,9 @@ conn.commit()
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
 st.markdown("""
 <style>
-    /* Latar belakang utama aplikasi (Coklat Pastel Lembut) */
     .stApp {
         background-color: #DBC1AC; 
     }
-    
-    /* Mengubah warna kotak teks menjadi hitam dan teksnya menjadi putih */
     .stTextArea textarea {
         background-color: #000000; 
         color: #FFFFFF;            
@@ -251,7 +248,9 @@ with tab_teks:
             if hasil_terjemahan:
                 try:
                     with st.spinner("Membuat suara..."):
-                        tts = gTTS(text=hasil_terjemahan, lang=kode_bahasa)
+                        # MEMBERSIHKAN SIMBOL BINTANG SEBELUM DIBACA
+                        teks_bersih = hasil_terjemahan.replace('*', '')
+                        tts = gTTS(text=teks_bersih, lang=kode_bahasa)
                         sound_file = BytesIO()
                         tts.write_to_fp(sound_file)
                         st.audio(sound_file)
@@ -283,7 +282,6 @@ with tab_kamera_ai:
             with st.spinner("AI sedang mengamati bentuk benda..."):
                 if gemini_ready:
                     try:
-                        # INSTRUKSI BARU: Diperpendek tanpa deskripsi benda
                         prompt_vision = """
                         Identifikasi benda utama apa yang ada di dalam gambar ini. 
                         Tolong berikan respons singkat dengan format yang rapi seperti ini tanpa tambahan penjelasan atau deskripsi apa pun:
@@ -291,13 +289,13 @@ with tab_kamera_ai:
                         **Nama Benda (Indonesia):** [sebutkan namanya]
                         **Terjemahan (Inggris):** [sebutkan bahasa inggrisnya]
                         """
-                        # Memasukkan gambar ke dalam "otak" AI
                         response_vision = model.generate_content([prompt_vision, gambar_benda])
                         st.success("✅ Gambar berhasil dianalisis!")
                         st.write(response_vision.text)
                         
-                        # Membacakan hasil identifikasi menggunakan Suara
-                        tts_vision = gTTS(text=response_vision.text, lang='id')
+                        # MEMBERSIHKAN SIMBOL BINTANG SEBELUM DIBACA
+                        teks_suara_bersih = response_vision.text.replace('*', '')
+                        tts_vision = gTTS(text=teks_suara_bersih, lang='id')
                         sound_file_vision = BytesIO()
                         tts_vision.write_to_fp(sound_file_vision)
                         st.audio(sound_file_vision)
