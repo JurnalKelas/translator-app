@@ -8,15 +8,15 @@ from gtts import gTTS
 from io import BytesIO
 import base64
 import google.generativeai as genai
+from streamlit_mic_recorder import speech_to_text # <-- Alat Mikrofon Baru!
 
 # --- KONFIGURASI OTOMATIS ---
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Terkunci pada mesin yang berhasil)
+# 1. SETUP GEMINI AI 
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Menggunakan mesin yang sudah Anda buktikan berhasil
     model = genai.GenerativeModel('gemini-3.5-flash-lite')
     gemini_ready = True
 except Exception as e:
@@ -33,8 +33,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v18 🚀✨")
-st.caption("Ditenagai oleh Gemini 3.5 Flash Lite & Kamus Visual Lokal")
+st.title("Aplikasi Web Translator v19 🚀🎙️")
+st.caption("Ditenagai oleh Gemini AI & Input Suara Pintar")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -95,7 +95,7 @@ with tab_db:
         st.info("Database masih kosong.")
         
     st.divider()
-    if st.button("🚨 Hapus Semua Data (Reset)") :
+    if st.button("🚨 Hapus Semua Data (Reset)"):
         c.execute("DELETE FROM dictionary")
         conn.commit()
         st.success("Database dikosongkan. Silakan refresh.")
@@ -107,8 +107,19 @@ arah = st.radio("Pilih Arah Terjemahan:",
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
+# Menentukan bahasa pendengaran mikrofon
+stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
+
+# Tombol Mikrofon
+st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
+suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
+
+# Jika ada suara, masukkan ke dalam kotak teks
+teks_awal = suara if suara else ""
+
 tempat_gambar = st.empty()
-text_input = st.text_area("Masukkan teks atau kalimat panjang:")
+# Kotak teks ini sekarang bisa diisi lewat ketikan manual ATAU otomatis dari mikrofon
+text_input = st.text_area("Atau ketik teks secara manual di sini:", value=teks_awal)
 
 if st.button("Terjemahkan"):
     if text_input:
