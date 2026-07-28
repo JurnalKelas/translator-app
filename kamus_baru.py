@@ -13,13 +13,14 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Mengambil kunci rahasia secara aman)
+# 1. SETUP GEMINI AI
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-1.5-flash')
     gemini_ready = True
-except:
+except Exception as e:
     gemini_ready = False
+    error_setup = str(e)
 
 # 2. KONEKSI DATABASE LOKAL
 conn = sqlite3.connect('translator.db')
@@ -32,8 +33,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v13 🚀✨")
-st.caption("Ditenagai oleh Kamus Visual Lokal & Google Gemini AI")
+st.title("Aplikasi Web Translator v14 🚀✨")
+st.caption("Mode Debug (Pencari Error)")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -123,13 +124,11 @@ if st.button("Terjemahkan"):
         dictionary_entries = c.fetchall()
         gambar_ditemukan = []
         
-        # 1. Cek apakah ada kata di kalimat yang ilustrasinya ada di Kamus Lokal Anda
         for source, target, img_data in dictionary_entries:
             pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
             if pattern.search(text_input) and img_data:
                 gambar_ditemukan.append((target, img_data))
         
-        # Munculkan Gambar Visual Dictionary
         if gambar_ditemukan:
             with tempat_gambar.container():
                 cols = st.columns(min(len(gambar_ditemukan), 3))
@@ -139,7 +138,6 @@ if st.button("Terjemahkan"):
                         st.image(img_bytes, use_container_width=True)
         st.write("---") 
 
-        # 2. Proses Terjemahan Kalimat Menggunakan Gemini AI
         st.success("**Hasil Terjemahan (Gemini AI):**")
         hasil_terjemahan = ""
         
@@ -150,13 +148,15 @@ if st.button("Terjemahkan"):
                     hasil_terjemahan = response.text.strip()
                     st.write(hasil_terjemahan)
                 except Exception as e:
-                    st.error("Gagal terhubung ke AI. Pastikan API Key valid.")
-                    hasil_terjemahan = text_input # Menghindari error suara jika gagal
+                    st.error("❌ Gagal terhubung ke AI. Ini pesan error aslinya dari Google:")
+                    # Ini akan memunculkan detail error teknis dari Google
+                    st.code(str(e)) 
+                    hasil_terjemahan = text_input
             else:
-                st.error("Sistem AI belum siap. Pastikan Streamlit Secrets sudah diisi.")
+                st.error("❌ Sistem AI gagal disiapkan. Ini pesan error aslinya:")
+                st.code(error_setup)
                 hasil_terjemahan = text_input
         
-        # 3. Proses Suara (Membaca hasil terjemahan AI)
         if hasil_terjemahan:
             try:
                 with st.spinner("Membuat suara..."):
@@ -166,3 +166,10 @@ if st.button("Terjemahkan"):
                     st.audio(sound_file)
             except:
                 st.error("Gagal memuat suara.")
+```eof
+
+Silakan perbarui kode di GitHub Anda dengan versi terbaru di atas, *commit changes*, lalu *refresh* halaman web aplikasi Anda. 
+
+Cobalah menekan tombol **Terjemahkan** lagi. Kali ini, layar akan menampilkan sebuah kotak abu-abu berisi tulisan teknis berbahasa Inggris dari server Google.
+
+Tolong beritahu saya apa isi tulisan di dalam kotak abu-abu tersebut! Biasanya akan ada kode angka seperti `400` atau `403` dan penjelasan spesifik mengapa kuncinya ditolak. Dari sana kita akan langsung tahu akar masalahnya.
