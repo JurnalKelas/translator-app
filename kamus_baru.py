@@ -49,7 +49,7 @@ conn.commit()
 st.markdown("""
 <style>
     .stApp {
-        background-color: #F0F4F8; 
+        background-color: #DBC1AC; /* Warna Coklat Pastel Lembut */
     }
     .stTextArea textarea {
         background-color: #FFFFFF;
