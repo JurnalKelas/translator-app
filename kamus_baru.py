@@ -13,30 +13,17 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Pencari Mesin Otomatis - Auto Pilot)
-nama_mesin_aktif = "Sedang Mencari..."
+# 1. SETUP GEMINI AI (Mengambil SEMUA daftar mesin)
+available_models = []
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    # Aplikasi akan meminta daftar nama mesin yang aktif langsung ke Google
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
-            nama_mesin_aktif = m.name
-            # Jika menemukan yang ada kata 'gemini'-nya, langsung pakai!
-            if "gemini" in nama_mesin_aktif.lower():
-                break
-                
-    if nama_mesin_aktif and nama_mesin_aktif != "Sedang Mencari...":
-        model = genai.GenerativeModel(nama_mesin_aktif)
-        gemini_ready = True
-    else:
-        gemini_ready = False
-        error_setup = "Tidak ada mesin AI yang diizinkan untuk kunci ini."
-
+            available_models.append(m.name)
+    gemini_ready = len(available_models) > 0
 except Exception as e:
     gemini_ready = False
     error_setup = str(e)
-    nama_mesin_aktif = "Gagal Melacak"
 
 # 2. KONEKSI DATABASE LOKAL
 conn = sqlite3.connect('translator.db')
@@ -49,11 +36,20 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v16 🚀🤖")
-st.caption(f"Mode Auto-Pilot | Terhubung ke: **{nama_mesin_aktif}**")
+st.title("Aplikasi Web Translator v17 🚀🤖")
+st.caption("Mode Pemilih Mesin AI Manual")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
+
+# Menambahkan menu dropdown (pilihan) mesin AI di sidebar
+selected_model = None
+if gemini_ready:
+    st.sidebar.success("✅ API Key Valid!")
+    selected_model = st.sidebar.selectbox("Pilih Mesin AI (Coba satu per satu jika gagal):", available_models)
+else:
+    st.sidebar.error("❌ API Key belum terhubung.")
+
 tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
 
 with tab_manual:
@@ -154,22 +150,24 @@ if st.button("Terjemahkan"):
                         st.image(img_bytes, use_container_width=True)
         st.write("---") 
 
-        st.success("**Hasil Terjemahan AI:**")
+        st.success(f"**Hasil Terjemahan ({selected_model}):**")
         hasil_terjemahan = ""
         
         with st.spinner("AI sedang merangkai kalimat..."):
-            if gemini_ready:
+            if gemini_ready and selected_model:
                 try:
+                    # Menjalankan mesin yang dipilih dari sidebar
+                    model = genai.GenerativeModel(selected_model)
                     response = model.generate_content(prompt_ai)
                     hasil_terjemahan = response.text.strip()
                     st.write(hasil_terjemahan)
                 except Exception as e:
-                    st.error("❌ Gagal terhubung ke AI saat menerjemahkan. Pesan error:")
+                    st.error("❌ Mesin ini menolak koneksi. Silakan pilih mesin lain di menu samping (Sidebar).")
                     st.code(str(e)) 
                     hasil_terjemahan = text_input
             else:
-                st.error("❌ Sistem AI gagal disiapkan. Pesan error:")
-                st.code(error_setup)
+                st.error("❌ Sistem AI gagal disiapkan.")
+                st.code(error_setup if not gemini_ready else "Model belum dipilih")
                 hasil_terjemahan = text_input
         
         if hasil_terjemahan:
