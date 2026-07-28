@@ -3,3 +3,4 @@ pytesseract
 Pillow
 gTTS
 google-generativeai
+streamlit-mic-recorder
