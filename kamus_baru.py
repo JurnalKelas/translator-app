@@ -13,7 +13,7 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI
+# 1. SETUP GEMINI AI (Dengan Pelacak Error)
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model = genai.GenerativeModel('gemini-1.5-flash')
@@ -149,7 +149,6 @@ if st.button("Terjemahkan"):
                     st.write(hasil_terjemahan)
                 except Exception as e:
                     st.error("❌ Gagal terhubung ke AI. Ini pesan error aslinya dari Google:")
-                    # Ini akan memunculkan detail error teknis dari Google
                     st.code(str(e)) 
                     hasil_terjemahan = text_input
             else:
@@ -166,10 +165,3 @@ if st.button("Terjemahkan"):
                     st.audio(sound_file)
             except:
                 st.error("Gagal memuat suara.")
-```eof
-
-Silakan perbarui kode di GitHub Anda dengan versi terbaru di atas, *commit changes*, lalu *refresh* halaman web aplikasi Anda. 
-
-Cobalah menekan tombol **Terjemahkan** lagi. Kali ini, layar akan menampilkan sebuah kotak abu-abu berisi tulisan teknis berbahasa Inggris dari server Google.
-
-Tolong beritahu saya apa isi tulisan di dalam kotak abu-abu tersebut! Biasanya akan ada kode angka seperti `400` atau `403` dan penjelasan spesifik mengapa kuncinya ditolak. Dari sana kita akan langsung tahu akar masalahnya.
