@@ -33,8 +33,27 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v20 🚀🎙️")
-st.caption("Ditenagai oleh Gemini AI & Input Suara Pintar (Anti-Lupa)")
+# --- BAGIAN MENAMPILKAN DUA LOGO ---
+col1, col2, col3 = st.columns([1, 1, 4]) 
+# Angka [1, 1, 4] mengatur logo di kiri dan sisa ruang kosong di kanan
+
+with col1:
+    try:
+        st.image("logo1.png", width=80) # Pastikan nama file logo pertama di GitHub adalah logo1.png
+    except:
+        pass # Mengabaikan jika gambar belum diunggah agar tidak error
+
+with col2:
+    try:
+        st.image("logo2.png", width=80) # Pastikan nama file logo kedua di GitHub adalah logo2.png
+    except:
+        pass
+
+st.write("---")
+
+# --- JUDUL BARU ALAZKA ---
+st.title("ALAZKA Smart English Dictionary 📖✨")
+st.caption("Powered by Gemini AI & Voice Recognition")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -107,27 +126,22 @@ arah = st.radio("Pilih Arah Terjemahan:",
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
-# 3. MEMORI STREAMLIT (Membuat aplikasi ingat teks sebelumnya)
+# MEMORI MIKROFON (Anti-lupa)
 if "memori_teks" not in st.session_state:
     st.session_state.memori_teks = ""
 
-# Menentukan bahasa pendengaran mikrofon
 stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
 
-# Tombol Mikrofon
 st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
 suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
 
-# Jika ada suara yang masuk, simpan ke memori!
 if suara:
     st.session_state.memori_teks = suara
 
 tempat_gambar = st.empty()
 
-# Kotak teks membaca dari memori
 text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
 
-# Update memori jika Anda mengetik/mengedit teks secara manual
 st.session_state.memori_teks = text_input
 
 if st.button("Terjemahkan"):
