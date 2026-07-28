@@ -37,7 +37,6 @@ c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, passwo
 c.execute("SELECT password FROM settings WHERE id=1")
 sandi_db = c.fetchone()
 if not sandi_db:
-    # Sandi bawaan pertama kali
     c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
     conn.commit()
     sandi_aktif = "alazka2026"
@@ -88,7 +87,6 @@ kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
 
 if kunci_admin == sandi_aktif:
     st.sidebar.success("Akses Admin Terbuka!")
-    # Menambahkan tab Pengaturan baru
     tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
 
     with tab_manual:
@@ -151,7 +149,6 @@ if kunci_admin == sandi_aktif:
             conn.commit()
             st.success("Database dikosongkan. Silakan refresh.")
             
-    # TAB BARU: PENGATURAN KATA SANDI
     with tab_pengaturan:
         st.write("⚙️ **Ganti Kata Sandi Admin**")
         with st.form("form_ganti_sandi"):
@@ -184,7 +181,6 @@ with tab_teks:
                     ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                     horizontal=True)
 
-    # MEMORI MIKROFON (Anti-lupa)
     if "memori_teks" not in st.session_state:
         st.session_state.memori_teks = ""
 
@@ -197,9 +193,7 @@ with tab_teks:
         st.session_state.memori_teks = suara
 
     tempat_gambar = st.empty()
-
     text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
-
     st.session_state.memori_teks = text_input
 
     if st.button("Terjemahkan Teks"):
@@ -241,14 +235,12 @@ with tab_teks:
                         st.write(hasil_terjemahan)
                     except Exception as e:
                         st.error("Koneksi ke AI terputus. Silakan coba lagi.")
-                        st.code(str(e))
                 else:
-                    st.error("Sistem AI gagal disiapkan. Pastikan API Key di Streamlit Secrets benar.")
+                    st.error("Sistem AI gagal disiapkan.")
             
             if hasil_terjemahan:
                 try:
                     with st.spinner("Membuat suara..."):
-                        # MEMBERSIHKAN SIMBOL BINTANG SEBELUM DIBACA
                         teks_bersih = hasil_terjemahan.replace('*', '')
                         tts = gTTS(text=teks_bersih, lang=kode_bahasa)
                         sound_file = BytesIO()
@@ -282,25 +274,40 @@ with tab_kamera_ai:
             with st.spinner("AI sedang mengamati bentuk benda..."):
                 if gemini_ready:
                     try:
-                        # INSTRUKSI BARU: Langsung pada intinya beserta pelafalan
+                        # INSTRUKSI AI: Format baku agar sistem mudah memotong teksnya
                         prompt_vision = """
                         Identifikasi benda utama apa yang ada di dalam gambar ini. 
-                        Tolong berikan jawaban yang sangat singkat, langsung pada intinya, dengan format persis seperti di bawah ini. Jangan tambahkan kalimat pembuka, basa-basi, penjelasan, atau deskripsi apa pun:
+                        Berikan jawaban yang sangat singkat dengan format persis seperti di bawah ini. Jangan tambahkan penjelasan atau kata-kata lain:
                         
                         **Benda:** [Nama Benda dalam Bahasa Indonesia]
-                        **Inggris:** [Terjemahan Bahasa Inggrisnya]
-                        **Pelafalan:** [Cara membacanya dalam ejaan bahasa Indonesia]
+                        **Bahasa Inggris:** [Terjemahan Bahasa Inggrisnya]
+                        **Pelafalan:** [Cara membacanya]
                         """
                         response_vision = model.generate_content([prompt_vision, gambar_benda])
-                        st.success("✅ Gambar berhasil dianalisis!")
-                        st.write(response_vision.text)
+                        hasil_teks = response_vision.text
                         
-                        # MEMBERSIHKAN SIMBOL BINTANG SEBELUM DIBACA
-                        teks_suara_bersih = response_vision.text.replace('*', '')
-                        tts_vision = gTTS(text=teks_suara_bersih, lang='id')
-                        sound_file_vision = BytesIO()
-                        tts_vision.write_to_fp(sound_file_vision)
-                        st.audio(sound_file_vision)
+                        st.success("✅ Gambar berhasil dianalisis!")
+                        # Menampilkan teks lengkap di layar (Indonesia + Inggris + Pelafalan)
+                        st.write(hasil_teks)
+                        
+                        # LOGIKA FILTER: Mencari bagian yang HANYA berisi Bahasa Inggris untuk disuarakan
+                        kata_inggris_saja = ""
+                         baris_baris = hasil_teks.split('\n')
+                        for baris in baris_baris:
+                            if "Bahasa Inggris:" in baris or "Inggris:" in baris:
+                                # Mengambil tulisan di sebelah kanan tanda ":"
+                                bagian_kanan = baris.split(":", 1)[1]
+                                # Membersihkan spasi dan simbol bintang
+                                kata_inggris_saja = bagian_kanan.replace('*', '').strip()
+                                break
+                                
+                        # Jika berhasil menemukan kata bahasa Inggrisnya
+                        if kata_inggris_saja:
+                            # MESIN SUARA diatur menjadi bahasa Inggris (lang='en')
+                            tts_vision = gTTS(text=kata_inggris_saja, lang='en')
+                            sound_file_vision = BytesIO()
+                            tts_vision.write_to_fp(sound_file_vision)
+                            st.audio(sound_file_vision)
                         
                     except Exception as e:
                         st.error("❌ Gagal menganalisis gambar.")
