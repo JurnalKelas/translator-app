@@ -13,10 +13,11 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Dengan Pelacak Error)
+# 1. SETUP GEMINI AI (Memakai model gemini-pro yang paling stabil)
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # NAMA MESIN DIGANTI DI SINI 👇
+    model = genai.GenerativeModel('gemini-pro')
     gemini_ready = True
 except Exception as e:
     gemini_ready = False
@@ -33,8 +34,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v14 🚀✨")
-st.caption("Mode Debug (Pencari Error)")
+st.title("Aplikasi Web Translator v15 🚀✨")
+st.caption("Ditenagai oleh Gemini Pro AI")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -138,7 +139,7 @@ if st.button("Terjemahkan"):
                         st.image(img_bytes, use_container_width=True)
         st.write("---") 
 
-        st.success("**Hasil Terjemahan (Gemini AI):**")
+        st.success("**Hasil Terjemahan (Gemini Pro AI):**")
         hasil_terjemahan = ""
         
         with st.spinner("AI sedang berpikir merangkai kalimat..."):
