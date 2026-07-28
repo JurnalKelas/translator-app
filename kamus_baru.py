@@ -32,12 +32,10 @@ try:
 except:
     pass
 
-# Membuat ruang khusus untuk menyimpan sandi Admin
 c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
 c.execute("SELECT password FROM settings WHERE id=1")
 sandi_db = c.fetchone()
 if not sandi_db:
-    # Sandi bawaan pertama kali
     c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
     conn.commit()
     sandi_aktif = "alazka2026"
@@ -48,15 +46,12 @@ conn.commit()
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
 st.markdown("""
 <style>
-    /* Latar belakang utama aplikasi (Coklat Pastel Lembut) */
     .stApp {
         background-color: #DBC1AC; 
     }
-    
-    /* Mengubah warna kotak teks menjadi hitam dan teksnya menjadi putih */
     .stTextArea textarea {
-        background-color: #000000; /* Latar hitam */
-        color: #FFFFFF;            /* Tulisan putih */
+        background-color: #000000; 
+        color: #FFFFFF;            
     }
 </style>
 """, unsafe_allow_html=True)
@@ -91,7 +86,6 @@ kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
 
 if kunci_admin == sandi_aktif:
     st.sidebar.success("Akses Admin Terbuka!")
-    # Menambahkan tab Pengaturan baru
     tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
 
     with tab_manual:
@@ -154,7 +148,6 @@ if kunci_admin == sandi_aktif:
             conn.commit()
             st.success("Database dikosongkan. Silakan refresh.")
             
-    # TAB BARU: PENGATURAN KATA SANDI
     with tab_pengaturan:
         st.write("⚙️ **Ganti Kata Sandi Admin**")
         with st.form("form_ganti_sandi"):
@@ -175,84 +168,134 @@ if kunci_admin == sandi_aktif:
 else:
     st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu database dan pengaturan.")
 
-# --- Bagian Utama: Terjemahan Cerdas ---
+# --- Bagian Utama: Terjemahan & Kamera Cerdas ---
 st.header("Terjemahkan dengan AI")
 
-arah = st.radio("Pilih Arah Terjemahan:", 
-                ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
-                horizontal=True)
+# Membagi layar utama menjadi 2 Menu (Tabs)
+tab_teks, tab_kamera_ai = st.tabs(["📝 Teks & Suara", "📸 Kamera & Identifikasi Benda"])
 
-# MEMORI MIKROFON (Anti-lupa)
-if "memori_teks" not in st.session_state:
-    st.session_state.memori_teks = ""
+# ================= TAB 1: TEKS & SUARA =================
+with tab_teks:
+    arah = st.radio("Pilih Arah Terjemahan:", 
+                    ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
+                    horizontal=True)
 
-stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
+    if "memori_teks" not in st.session_state:
+        st.session_state.memori_teks = ""
 
-st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
-suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
+    stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
 
-if suara:
-    st.session_state.memori_teks = suara
+    st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
+    suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
 
-tempat_gambar = st.empty()
+    if suara:
+        st.session_state.memori_teks = suara
 
-text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
+    tempat_gambar = st.empty()
 
-st.session_state.memori_teks = text_input
+    text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
+    st.session_state.memori_teks = text_input
 
-if st.button("Terjemahkan"):
-    if text_input:
-        if arah == "Inggris ke Indonesia":
-            c.execute("SELECT source_word, target_word, image_data FROM dictionary ORDER BY LENGTH(source_word) DESC")
-            kode_bahasa = 'id'
-            prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Inggris ke bahasa Indonesia dengan tata bahasa yang natural, baku, namun mudah dipahami. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
-        else:
-            c.execute("SELECT target_word, source_word, image_data FROM dictionary ORDER BY LENGTH(target_word) DESC")
-            kode_bahasa = 'en'
-            prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Indonesia ke bahasa Inggris dengan grammar yang tepat dan natural. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
-            
-        dictionary_entries = c.fetchall()
-        gambar_ditemukan = []
-        
-        for source, target, img_data in dictionary_entries:
-            pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
-            if pattern.search(text_input) and img_data:
-                gambar_ditemukan.append((target, img_data))
-        
-        if gambar_ditemukan:
-            with tempat_gambar.container():
-                cols = st.columns(min(len(gambar_ditemukan), 3))
-                for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
-                    with cols[idx % 3]:
-                        img_bytes = base64.b64decode(img_b64)
-                        st.image(img_bytes, use_container_width=True)
-        st.write("---") 
-
-        st.success("**Hasil Terjemahan:**")
-        hasil_terjemahan = ""
-        
-        with st.spinner("AI sedang merangkai kalimat..."):
-            if gemini_ready:
-                try:
-                    response = model.generate_content(prompt_ai)
-                    hasil_terjemahan = response.text.strip()
-                    st.write(hasil_terjemahan)
-                except Exception as e:
-                    st.error("Koneksi ke AI terputus. Silakan coba lagi.")
-                    st.code(str(e))
-                    hasil_terjemahan = text_input
+    if st.button("Terjemahkan Teks"):
+        if text_input:
+            if arah == "Inggris ke Indonesia":
+                c.execute("SELECT source_word, target_word, image_data FROM dictionary ORDER BY LENGTH(source_word) DESC")
+                kode_bahasa = 'id'
+                prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Inggris ke bahasa Indonesia dengan tata bahasa yang natural, baku, namun mudah dipahami. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
             else:
-                st.error("Sistem AI gagal disiapkan. Pastikan API Key di Streamlit Secrets benar.")
-                hasil_terjemahan = text_input
-        
-        if hasil_terjemahan:
-            try:
-                with st.spinner("Membuat suara..."):
-                    tts = gTTS(text=hasil_terjemahan, lang=kode_bahasa)
-                    sound_file = BytesIO()
-                    tts.write_to_fp(sound_file)
-                    st.audio(sound_file)
-            except:
-                st.error("Gagal memuat suara.")
+                c.execute("SELECT target_word, source_word, image_data FROM dictionary ORDER BY LENGTH(target_word) DESC")
+                kode_bahasa = 'en'
+                prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Indonesia ke bahasa Inggris dengan grammar yang tepat dan natural. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
+                
+            dictionary_entries = c.fetchall()
+            gambar_ditemukan = []
+            
+            for source, target, img_data in dictionary_entries:
+                pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
+                if pattern.search(text_input) and img_data:
+                    gambar_ditemukan.append((target, img_data))
+            
+            if gambar_ditemukan:
+                with tempat_gambar.container():
+                    cols = st.columns(min(len(gambar_ditemukan), 3))
+                    for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
+                        with cols[idx % 3]:
+                            img_bytes = base64.b64decode(img_b64)
+                            st.image(img_bytes, use_container_width=True)
+            st.write("---") 
+
+            st.success("**Hasil Terjemahan:**")
+            hasil_terjemahan = ""
+            
+            with st.spinner("AI sedang merangkai kalimat..."):
+                if gemini_ready:
+                    try:
+                        response = model.generate_content(prompt_ai)
+                        hasil_terjemahan = response.text.strip()
+                        st.write(hasil_terjemahan)
+                    except Exception as e:
+                        st.error("Koneksi ke AI terputus. Silakan coba lagi.")
+                        st.code(str(e))
+                else:
+                    st.error("Sistem AI gagal disiapkan.")
+            
+            if hasil_terjemahan:
+                try:
+                    with st.spinner("Membuat suara..."):
+                        tts = gTTS(text=hasil_terjemahan, lang=kode_bahasa)
+                        sound_file = BytesIO()
+                        tts.write_to_fp(sound_file)
+                        st.audio(sound_file)
+                except:
+                    st.error("Gagal memuat suara.")
+        else:
+            st.warning("⚠️ Kotak teks masih kosong.")
+
+# ================= TAB 2: KAMERA & PENGENALAN OBJEK =================
+with tab_kamera_ai:
+    st.write("📸 **Cari tahu nama benda dalam Bahasa Inggris hanya dengan memfotonya!**")
+    
+    pilihan_input_gambar = st.radio("Pilih cara memasukkan gambar:", ("Gunakan Kamera", "Unggah Gambar dari Perangkat"), horizontal=True)
+    
+    gambar_benda = None
+    
+    if pilihan_input_gambar == "Gunakan Kamera":
+        file_kamera = st.camera_input("Ambil Foto Benda")
+        if file_kamera:
+            gambar_benda = Image.open(file_kamera)
     else:
-        st.warning("⚠️ Kotak teks masih kosong, tidak ada yang bisa diterjemahkan.")
+        file_unggah = st.file_uploader("Pilih gambar (.jpg / .png)", type=['png', 'jpg', 'jpeg'])
+        if file_unggah:
+            gambar_benda = Image.open(file_unggah)
+            st.image(gambar_benda, use_container_width=True)
+            
+    if gambar_benda:
+        if st.button("🔍 Identifikasi & Terjemahkan Gambar"):
+            with st.spinner("AI sedang mengamati bentuk benda..."):
+                if gemini_ready:
+                    try:
+                        prompt_vision = """
+                        Identifikasi benda utama apa yang ada di dalam gambar ini. 
+                        Tolong berikan respons dengan format yang rapi seperti ini:
+                        
+                        **Nama Benda (Indonesia):** [sebutkan namanya]
+                        **Terjemahan (Inggris):** [sebutkan bahasa inggrisnya]
+                        
+                        **Deskripsi Singkat:** [Berikan 1-2 kalimat penjelasan tentang benda tersebut dan fungsinya]
+                        """
+                        # Memasukkan gambar ke dalam "otak" AI
+                        response_vision = model.generate_content([prompt_vision, gambar_benda])
+                        st.success("✅ Gambar berhasil dianalisis!")
+                        st.write(response_vision.text)
+                        
+                        # Membacakan hasil identifikasi menggunakan Suara
+                        tts_vision = gTTS(text=response_vision.text, lang='id')
+                        sound_file_vision = BytesIO()
+                        tts_vision.write_to_fp(sound_file_vision)
+                        st.audio(sound_file_vision)
+                        
+                    except Exception as e:
+                        st.error("❌ Gagal menganalisis gambar.")
+                        st.code(str(e))
+                else:
+                    st.error("Sistem AI gagal disiapkan.")
