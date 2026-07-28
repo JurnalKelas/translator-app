@@ -8,7 +8,7 @@ from gtts import gTTS
 from io import BytesIO
 import base64
 import google.generativeai as genai
-from streamlit_mic_recorder import speech_to_text # <-- Alat Mikrofon Baru!
+from streamlit_mic_recorder import speech_to_text
 
 # --- KONFIGURASI OTOMATIS ---
 if os.name == 'nt':
@@ -33,8 +33,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v19 🚀🎙️")
-st.caption("Ditenagai oleh Gemini AI & Input Suara Pintar")
+st.title("Aplikasi Web Translator v20 🚀🎙️")
+st.caption("Ditenagai oleh Gemini AI & Input Suara Pintar (Anti-Lupa)")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -107,6 +107,10 @@ arah = st.radio("Pilih Arah Terjemahan:",
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
+# 3. MEMORI STREAMLIT (Membuat aplikasi ingat teks sebelumnya)
+if "memori_teks" not in st.session_state:
+    st.session_state.memori_teks = ""
+
 # Menentukan bahasa pendengaran mikrofon
 stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
 
@@ -114,12 +118,17 @@ stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
 st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
 suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
 
-# Jika ada suara, masukkan ke dalam kotak teks
-teks_awal = suara if suara else ""
+# Jika ada suara yang masuk, simpan ke memori!
+if suara:
+    st.session_state.memori_teks = suara
 
 tempat_gambar = st.empty()
-# Kotak teks ini sekarang bisa diisi lewat ketikan manual ATAU otomatis dari mikrofon
-text_input = st.text_area("Atau ketik teks secara manual di sini:", value=teks_awal)
+
+# Kotak teks membaca dari memori
+text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
+
+# Update memori jika Anda mengetik/mengedit teks secara manual
+st.session_state.memori_teks = text_input
 
 if st.button("Terjemahkan"):
     if text_input:
@@ -160,6 +169,7 @@ if st.button("Terjemahkan"):
                     st.write(hasil_terjemahan)
                 except Exception as e:
                     st.error("Koneksi ke AI terputus. Silakan coba lagi.")
+                    st.code(str(e))
                     hasil_terjemahan = text_input
             else:
                 st.error("Sistem AI gagal disiapkan. Pastikan API Key di Streamlit Secrets benar.")
@@ -174,3 +184,5 @@ if st.button("Terjemahkan"):
                     st.audio(sound_file)
             except:
                 st.error("Gagal memuat suara.")
+    else:
+        st.warning("⚠️ Kotak teks masih kosong, tidak ada yang bisa diterjemahkan.")
