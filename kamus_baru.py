@@ -33,8 +33,22 @@ except:
     pass
 conn.commit()
 
+# --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
+st.markdown("""
+<style>
+    /* Mengubah warna latar belakang utama aplikasi */
+    .stApp {
+        background-color: #F0F4F8; /* Warna Biru-Abu Pastel Lembut */
+    }
+    
+    /* Membuat kotak teks tetap putih bersih agar tulisan mudah dibaca */
+    .stTextArea textarea {
+        background-color: #FFFFFF;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- BAGIAN MENAMPILKAN DUA LOGO (KIRI & KANAN) ---
-# col1 di pojok kiri, col2 sebagai jarak kosong di tengah, col3 di pojok kanan
 col1, col2, col3 = st.columns([1, 6, 1]) 
 
 with col1:
@@ -44,12 +58,10 @@ with col1:
         pass 
 
 with col2:
-    # Bagian tengah dibiarkan kosong sebagai pemisah
     st.write("") 
 
 with col3:
     try:
-        # Gambar di kolom 3 akan didorong ke pojok kanan layar
         st.image("logo2.png", width=80) 
     except:
         pass
