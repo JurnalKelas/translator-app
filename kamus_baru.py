@@ -7,12 +7,21 @@ import os
 from gtts import gTTS
 from io import BytesIO
 import base64
+import google.generativeai as genai
 
 # --- KONFIGURASI OTOMATIS ---
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. Koneksi & Upgrade Database
+# 1. SETUP GEMINI AI (Mengambil kunci rahasia secara aman)
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    gemini_ready = True
+except:
+    gemini_ready = False
+
+# 2. KONEKSI DATABASE LOKAL
 conn = sqlite3.connect('translator.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
@@ -23,7 +32,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v12 🚀")
+st.title("Aplikasi Web Translator v13 🚀✨")
+st.caption("Ditenagai oleh Kamus Visual Lokal & Google Gemini AI")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -34,7 +44,7 @@ with tab_manual:
         source = st.text_input("Kata / Frasa Asal (Inggris)")
         target = st.text_input("Terjemahan (Indonesia)")
         gambar_kamus = st.file_uploader("Unggah Ilustrasi (Opsional)", type=['png', 'jpg', 'jpeg'])
-        submit = st.form_submit_button("Simpan ke Kamus")
+        submit = st.form_submit_button("Simpan ke Kamus Lokal")
         
         if submit and source and target:
             image_b64 = ""
@@ -58,7 +68,6 @@ with tab_gambar:
                 extracted_text = pytesseract.image_to_string(img)
                 lines = extracted_text.split('\n')
                 saved_count = 0
-                
                 for line in lines:
                     pemisah = '=' if '=' in line else ':' if ':' in line else None
                     if pemisah:
@@ -66,7 +75,6 @@ with tab_gambar:
                         if len(parts) == 2:
                             kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
                             terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
-                            
                             if kata_asal and terjemahan:
                                 c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
                                 if not c.fetchone():
@@ -77,10 +85,9 @@ with tab_gambar:
                 st.success(f"{saved_count} frasa/kata berhasil disimpan!")
 
 with tab_db:
-    st.write("Isi Kamus Anda Saat Ini:")
+    st.write("Isi Kamus Visual Anda Saat Ini:")
     c.execute("SELECT source_word, target_word, image_data FROM dictionary")
     rows = c.fetchall()
-    
     if rows:
         st.table({"Bahasa Inggris": [r[0] for r in rows], "Bahasa Indonesia": [r[1] for r in rows]})
     else:
@@ -92,40 +99,37 @@ with tab_db:
         conn.commit()
         st.success("Database dikosongkan. Silakan refresh.")
 
-# --- Bagian Utama: Terjemahan ---
-st.header("Terjemahkan Teks")
+# --- Bagian Utama: Terjemahan Cerdas ---
+st.header("Terjemahkan dengan AI")
 
 arah = st.radio("Pilih Arah Terjemahan:", 
                 ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                 horizontal=True)
 
-# Tempat khusus untuk gambar muncul di atas kotak input
 tempat_gambar = st.empty()
-
-# Kotak input teks
-text_input = st.text_area("Masukkan teks:")
+text_input = st.text_area("Masukkan teks atau kalimat panjang:")
 
 if st.button("Terjemahkan"):
     if text_input:
         if arah == "Inggris ke Indonesia":
             c.execute("SELECT source_word, target_word, image_data FROM dictionary ORDER BY LENGTH(source_word) DESC")
             kode_bahasa = 'id'
+            prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Inggris ke bahasa Indonesia dengan tata bahasa yang natural, baku, namun mudah dipahami. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
         else:
             c.execute("SELECT target_word, source_word, image_data FROM dictionary ORDER BY LENGTH(target_word) DESC")
             kode_bahasa = 'en'
+            prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Indonesia ke bahasa Inggris dengan grammar yang tepat dan natural. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
             
         dictionary_entries = c.fetchall()
-        translated_text = text_input
         gambar_ditemukan = []
         
+        # 1. Cek apakah ada kata di kalimat yang ilustrasinya ada di Kamus Lokal Anda
         for source, target, img_data in dictionary_entries:
             pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
-            if pattern.search(translated_text):
-                translated_text = pattern.sub(target, translated_text)
-                if img_data:
-                    gambar_ditemukan.append((target, img_data))
+            if pattern.search(text_input) and img_data:
+                gambar_ditemukan.append((target, img_data))
         
-        # 1. TAMPILKAN GAMBAR (Di atas kotak input)
+        # Munculkan Gambar Visual Dictionary
         if gambar_ditemukan:
             with tempat_gambar.container():
                 cols = st.columns(min(len(gambar_ditemukan), 3))
@@ -133,20 +137,32 @@ if st.button("Terjemahkan"):
                     with cols[idx % 3]:
                         img_bytes = base64.b64decode(img_b64)
                         st.image(img_bytes, use_container_width=True)
-                        
-        # Garis pembatas hasil terjemahan
         st.write("---") 
 
-        # 2. TAMPILKAN HASIL TERJEMAHAN (Kata asal sudah dihilangkan)
-        st.success("**Hasil Terjemahan:**")
-        st.write(translated_text)
+        # 2. Proses Terjemahan Kalimat Menggunakan Gemini AI
+        st.success("**Hasil Terjemahan (Gemini AI):**")
+        hasil_terjemahan = ""
         
-        # 3. TAMPILKAN TOMBOL SUARA
-        try:
-            with st.spinner("Membuat suara..."):
-                tts = gTTS(text=translated_text, lang=kode_bahasa)
-                sound_file = BytesIO()
-                tts.write_to_fp(sound_file)
-                st.audio(sound_file)
-        except:
-            st.error("Gagal memuat suara.")
+        with st.spinner("AI sedang berpikir merangkai kalimat..."):
+            if gemini_ready:
+                try:
+                    response = model.generate_content(prompt_ai)
+                    hasil_terjemahan = response.text.strip()
+                    st.write(hasil_terjemahan)
+                except Exception as e:
+                    st.error("Gagal terhubung ke AI. Pastikan API Key valid.")
+                    hasil_terjemahan = text_input # Menghindari error suara jika gagal
+            else:
+                st.error("Sistem AI belum siap. Pastikan Streamlit Secrets sudah diisi.")
+                hasil_terjemahan = text_input
+        
+        # 3. Proses Suara (Membaca hasil terjemahan AI)
+        if hasil_terjemahan:
+            try:
+                with st.spinner("Membuat suara..."):
+                    tts = gTTS(text=hasil_terjemahan, lang=kode_bahasa)
+                    sound_file = BytesIO()
+                    tts.write_to_fp(sound_file)
+                    st.audio(sound_file)
+            except:
+                st.error("Gagal memuat suara.")
