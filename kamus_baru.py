@@ -22,7 +22,7 @@ try:
 except Exception as e:
     gemini_ready = False
 
-# 2. KONEKSI DATABASE LOKAL
+# 2. KONEKSI DATABASE LOKAL & SISTEM SANDI
 conn = sqlite3.connect('translator.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
@@ -31,6 +31,18 @@ try:
     c.execute("ALTER TABLE dictionary ADD COLUMN image_data TEXT")
 except:
     pass
+
+# Membuat ruang khusus untuk menyimpan sandi Admin
+c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
+c.execute("SELECT password FROM settings WHERE id=1")
+sandi_db = c.fetchone()
+if not sandi_db:
+    # Sandi bawaan pertama kali
+    c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
+    conn.commit()
+    sandi_aktif = "alazka2026"
+else:
+    sandi_aktif = sandi_db[0]
 conn.commit()
 
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
@@ -71,13 +83,12 @@ st.caption("Powered by Gemini AI & Voice Recognition")
 
 # --- Bagian Sidebar (Dikunci untuk Admin) ---
 st.sidebar.header("Menu Admin ALAZKA")
-# Kotak password, teks yang diketik akan disamarkan menjadi titik-titik
 kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
 
-# Cek apakah passwordnya benar. SILAKAN GANTI "alazka2026" DENGAN SANDI RAHASIA ANDA
-if kunci_admin == "alazka2026":
+if kunci_admin == sandi_aktif:
     st.sidebar.success("Akses Admin Terbuka!")
-    tab_manual, tab_gambar, tab_db = st.sidebar.tabs(["Manual", "Gambar", "Database"])
+    # Menambahkan tab Pengaturan baru
+    tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
 
     with tab_manual:
         with st.form("add_word_form"):
@@ -138,8 +149,27 @@ if kunci_admin == "alazka2026":
             c.execute("DELETE FROM dictionary")
             conn.commit()
             st.success("Database dikosongkan. Silakan refresh.")
+            
+    # TAB BARU: PENGATURAN KATA SANDI
+    with tab_pengaturan:
+        st.write("⚙️ **Ganti Kata Sandi Admin**")
+        with st.form("form_ganti_sandi"):
+            sandi_baru = st.text_input("Masukkan Sandi Baru:", type="password")
+            konfirmasi_sandi = st.text_input("Konfirmasi Sandi Baru:", type="password")
+            submit_sandi = st.form_submit_button("Ubah Kata Sandi")
+            
+            if submit_sandi:
+                if sandi_baru and sandi_baru == konfirmasi_sandi:
+                    c.execute("UPDATE settings SET password=? WHERE id=1", (sandi_baru,))
+                    conn.commit()
+                    st.success("✅ Sandi berhasil diubah! Ketikkan sandi baru di menu atas.")
+                elif sandi_baru != konfirmasi_sandi:
+                    st.error("❌ Sandi baru dan konfirmasi tidak cocok!")
+                else:
+                    st.warning("⚠️ Sandi tidak boleh kosong!")
+
 else:
-    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu database dan penambahan kata.")
+    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu database dan pengaturan.")
 
 # --- Bagian Utama: Terjemahan Cerdas ---
 st.header("Terjemahkan dengan AI")
