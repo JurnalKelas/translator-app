@@ -282,12 +282,14 @@ with tab_kamera_ai:
             with st.spinner("AI sedang mengamati bentuk benda..."):
                 if gemini_ready:
                     try:
+                        # INSTRUKSI BARU: Langsung pada intinya beserta pelafalan
                         prompt_vision = """
                         Identifikasi benda utama apa yang ada di dalam gambar ini. 
-                        Tolong berikan respons singkat dengan format yang rapi seperti ini tanpa tambahan penjelasan atau deskripsi apa pun:
+                        Tolong berikan jawaban yang sangat singkat, langsung pada intinya, dengan format persis seperti di bawah ini. Jangan tambahkan kalimat pembuka, basa-basi, penjelasan, atau deskripsi apa pun:
                         
-                        **Nama Benda (Indonesia):** [sebutkan namanya]
-                        **Terjemahan (Inggris):** [sebutkan bahasa inggrisnya]
+                        **Benda:** [Nama Benda dalam Bahasa Indonesia]
+                        **Inggris:** [Terjemahan Bahasa Inggrisnya]
+                        **Pelafalan:** [Cara membacanya dalam ejaan bahasa Indonesia]
                         """
                         response_vision = model.generate_content([prompt_vision, gambar_benda])
                         st.success("✅ Gambar berhasil dianalisis!")
