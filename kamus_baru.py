@@ -13,15 +13,30 @@ import google.generativeai as genai
 if os.name == 'nt':
     pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-# 1. SETUP GEMINI AI (Memakai model gemini-pro yang paling stabil)
+# 1. SETUP GEMINI AI (Pencari Mesin Otomatis - Auto Pilot)
+nama_mesin_aktif = "Sedang Mencari..."
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # NAMA MESIN DIGANTI DI SINI 👇
-    model = genai.GenerativeModel('gemini-pro')
-    gemini_ready = True
+    
+    # Aplikasi akan meminta daftar nama mesin yang aktif langsung ke Google
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            nama_mesin_aktif = m.name
+            # Jika menemukan yang ada kata 'gemini'-nya, langsung pakai!
+            if "gemini" in nama_mesin_aktif.lower():
+                break
+                
+    if nama_mesin_aktif and nama_mesin_aktif != "Sedang Mencari...":
+        model = genai.GenerativeModel(nama_mesin_aktif)
+        gemini_ready = True
+    else:
+        gemini_ready = False
+        error_setup = "Tidak ada mesin AI yang diizinkan untuk kunci ini."
+
 except Exception as e:
     gemini_ready = False
     error_setup = str(e)
+    nama_mesin_aktif = "Gagal Melacak"
 
 # 2. KONEKSI DATABASE LOKAL
 conn = sqlite3.connect('translator.db')
@@ -34,8 +49,8 @@ except:
     pass
 conn.commit()
 
-st.title("Aplikasi Web Translator v15 🚀✨")
-st.caption("Ditenagai oleh Gemini Pro AI")
+st.title("Aplikasi Web Translator v16 🚀🤖")
+st.caption(f"Mode Auto-Pilot | Terhubung ke: **{nama_mesin_aktif}**")
 
 # --- Bagian Sidebar ---
 st.sidebar.header("Menu Aplikasi")
@@ -139,21 +154,21 @@ if st.button("Terjemahkan"):
                         st.image(img_bytes, use_container_width=True)
         st.write("---") 
 
-        st.success("**Hasil Terjemahan (Gemini Pro AI):**")
+        st.success("**Hasil Terjemahan AI:**")
         hasil_terjemahan = ""
         
-        with st.spinner("AI sedang berpikir merangkai kalimat..."):
+        with st.spinner("AI sedang merangkai kalimat..."):
             if gemini_ready:
                 try:
                     response = model.generate_content(prompt_ai)
                     hasil_terjemahan = response.text.strip()
                     st.write(hasil_terjemahan)
                 except Exception as e:
-                    st.error("❌ Gagal terhubung ke AI. Ini pesan error aslinya dari Google:")
+                    st.error("❌ Gagal terhubung ke AI saat menerjemahkan. Pesan error:")
                     st.code(str(e)) 
                     hasil_terjemahan = text_input
             else:
-                st.error("❌ Sistem AI gagal disiapkan. Ini pesan error aslinya:")
+                st.error("❌ Sistem AI gagal disiapkan. Pesan error:")
                 st.code(error_setup)
                 hasil_terjemahan = text_input
         
