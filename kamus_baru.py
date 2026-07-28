@@ -22,7 +22,7 @@ try:
 except Exception as e:
     gemini_ready = False
 
-# 2. KONEKSI DATABASE LOKAL & SISTEM SANDI
+# 2. KONEKSI DATABASE LOKAL & SISTEM DUA SANDI
 conn = sqlite3.connect('translator.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
@@ -32,16 +32,27 @@ try:
 except:
     pass
 
-# Membuat ruang khusus untuk menyimpan sandi Admin
+# Membuat tabel untuk pengaturan sandi
 c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
+
+# Kunci 1: Sandi Admin (Untuk Menu Samping) -> ID 1
 c.execute("SELECT password FROM settings WHERE id=1")
-sandi_db = c.fetchone()
-if not sandi_db:
+sandi_admin_db = c.fetchone()
+if not sandi_admin_db:
     c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
-    conn.commit()
-    sandi_aktif = "alazka2026"
+    sandi_admin_aktif = "alazka2026"
 else:
-    sandi_aktif = sandi_db[0]
+    sandi_admin_aktif = sandi_admin_db[0]
+
+# Kunci 2: Sandi Aplikasi (Untuk Masuk Layar Utama) -> ID 2
+c.execute("SELECT password FROM settings WHERE id=2")
+sandi_app_db = c.fetchone()
+if not sandi_app_db:
+    c.execute("INSERT INTO settings (id, password) VALUES (2, 'alazka123')")
+    sandi_app_aktif = "alazka123"
+else:
+    sandi_app_aktif = sandi_app_db[0]
+
 conn.commit()
 
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
@@ -57,18 +68,43 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# ========================================================
+# FITUR BARU: GERBANG KEAMANAN (LOGIN LAYAR UTAMA)
+# ========================================================
+if "app_terbuka" not in st.session_state:
+    st.session_state.app_terbuka = False
+
+if not st.session_state.app_terbuka:
+    st.write("")
+    st.write("")
+    col_tengah = st.columns([1, 2, 1])
+    with col_tengah[1]:
+        st.title("🔒 ALAZKA Private App")
+        st.write("Aplikasi ini bersifat tertutup. Silakan masukkan kata sandi akses dari administrator.")
+        
+        sandi_masuk = st.text_input("Kata Sandi Akses:", type="password")
+        if st.button("Buka Aplikasi"):
+            if sandi_masuk == sandi_app_aktif:
+                st.session_state.app_terbuka = True
+                st.rerun() # Refresh layar untuk membuka aplikasi
+            else:
+                st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
+    # st.stop() akan menghentikan kode di sini jika belum login. Kode di bawahnya tidak akan dieksekusi.
+    st.stop() 
+
+# ========================================================
+# APLIKASI UTAMA (HANYA MUNCUL JIKA SUDAH LOGIN)
+# ========================================================
+
 # --- BAGIAN MENAMPILKAN DUA LOGO (KIRI & KANAN) ---
 col1, col2, col3 = st.columns([1, 6, 1]) 
-
 with col1:
     try:
         st.image("logo1.png", width=80) 
     except:
         pass 
-
 with col2:
     st.write("") 
-
 with col3:
     try:
         st.image("logo2.png", width=80) 
@@ -77,15 +113,14 @@ with col3:
 
 st.write("---")
 
-# --- JUDUL BARU ALAZKA ---
 st.title("ALAZKA Smart English Dictionary 📖✨")
 st.caption("Powered by Gemini AI & Voice Recognition")
 
-# --- Bagian Sidebar (Dikunci untuk Admin) ---
+# --- Bagian Sidebar (Menu Admin) ---
 st.sidebar.header("Menu Admin ALAZKA")
-kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
+kunci_admin = st.sidebar.text_input("Kunci Rahasia Admin:", type="password")
 
-if kunci_admin == sandi_aktif:
+if kunci_admin == sandi_admin_aktif:
     st.sidebar.success("Akses Admin Terbuka!")
     tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
 
@@ -150,7 +185,9 @@ if kunci_admin == sandi_aktif:
             st.success("Database dikosongkan. Silakan refresh.")
             
     with tab_pengaturan:
-        st.write("⚙️ **Ganti Kata Sandi Admin**")
+        st.write("⚙️ **Ubah Kata Sandi**")
+        pilihan_ubah = st.radio("Pilih sandi yang akan diubah:", ("Sandi Akses Siswa", "Sandi Admin"))
+        
         with st.form("form_ganti_sandi"):
             sandi_baru = st.text_input("Masukkan Sandi Baru:", type="password")
             konfirmasi_sandi = st.text_input("Konfirmasi Sandi Baru:", type="password")
@@ -158,24 +195,28 @@ if kunci_admin == sandi_aktif:
             
             if submit_sandi:
                 if sandi_baru and sandi_baru == konfirmasi_sandi:
-                    c.execute("UPDATE settings SET password=? WHERE id=1", (sandi_baru,))
+                    if pilihan_ubah == "Sandi Akses Siswa":
+                        c.execute("UPDATE settings SET password=? WHERE id=2", (sandi_baru,))
+                    else:
+                        c.execute("UPDATE settings SET password=? WHERE id=1", (sandi_baru,))
                     conn.commit()
-                    st.success("✅ Sandi berhasil diubah! Ketikkan sandi baru di menu atas.")
+                    st.success("✅ Sandi berhasil diubah! Silakan muat ulang (refresh) halaman.")
                 elif sandi_baru != konfirmasi_sandi:
                     st.error("❌ Sandi baru dan konfirmasi tidak cocok!")
                 else:
                     st.warning("⚠️ Sandi tidak boleh kosong!")
-
 else:
-    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu database dan pengaturan.")
+    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu Admin.")
+    # Tombol keluar untuk kembali ke halaman gembok utama
+    if st.sidebar.button("🚪 Kunci Kembali Aplikasi"):
+        st.session_state.app_terbuka = False
+        st.rerun()
 
 # --- Bagian Utama: Terjemahan & Kamera Cerdas ---
 st.header("Terjemahkan dengan AI")
 
-# Membagi layar utama menjadi 2 Menu (Tabs)
 tab_teks, tab_kamera_ai = st.tabs(["📝 Teks & Suara", "📸 Kamera & Identifikasi Benda"])
 
-# ================= TAB 1: TEKS & SUARA =================
 with tab_teks:
     arah = st.radio("Pilih Arah Terjemahan:", 
                     ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
@@ -251,7 +292,6 @@ with tab_teks:
         else:
             st.warning("⚠️ Kotak teks masih kosong, tidak ada yang bisa diterjemahkan.")
 
-# ================= TAB 2: KAMERA & PENGENALAN OBJEK =================
 with tab_kamera_ai:
     st.write("📸 **Cari tahu nama benda dalam Bahasa Inggris hanya dengan memfotonya!**")
     
@@ -288,7 +328,6 @@ with tab_kamera_ai:
                         st.success("✅ Gambar berhasil dianalisis!")
                         st.write(hasil_teks)
                         
-                        # LOGIKA FILTER: Mencari bagian yang HANYA berisi Bahasa Inggris untuk disuarakan
                         kata_inggris_saja = ""
                         baris_baris = hasil_teks.split('\n')
                         for baris in baris_baris:
