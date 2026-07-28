@@ -32,10 +32,12 @@ try:
 except:
     pass
 
+# Membuat ruang khusus untuk menyimpan sandi Admin
 c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
 c.execute("SELECT password FROM settings WHERE id=1")
 sandi_db = c.fetchone()
 if not sandi_db:
+    # Sandi bawaan pertama kali
     c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
     conn.commit()
     sandi_aktif = "alazka2026"
@@ -46,9 +48,12 @@ conn.commit()
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
 st.markdown("""
 <style>
+    /* Latar belakang utama aplikasi (Coklat Pastel Lembut) */
     .stApp {
         background-color: #DBC1AC; 
     }
+    
+    /* Mengubah warna kotak teks menjadi hitam dan teksnya menjadi putih */
     .stTextArea textarea {
         background-color: #000000; 
         color: #FFFFFF;            
@@ -86,6 +91,7 @@ kunci_admin = st.sidebar.text_input("Kunci Rahasia:", type="password")
 
 if kunci_admin == sandi_aktif:
     st.sidebar.success("Akses Admin Terbuka!")
+    # Menambahkan tab Pengaturan baru
     tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
 
     with tab_manual:
@@ -148,6 +154,7 @@ if kunci_admin == sandi_aktif:
             conn.commit()
             st.success("Database dikosongkan. Silakan refresh.")
             
+    # TAB BARU: PENGATURAN KATA SANDI
     with tab_pengaturan:
         st.write("⚙️ **Ganti Kata Sandi Admin**")
         with st.form("form_ganti_sandi"):
@@ -180,6 +187,7 @@ with tab_teks:
                     ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
                     horizontal=True)
 
+    # MEMORI MIKROFON (Anti-lupa)
     if "memori_teks" not in st.session_state:
         st.session_state.memori_teks = ""
 
@@ -194,6 +202,7 @@ with tab_teks:
     tempat_gambar = st.empty()
 
     text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
+
     st.session_state.memori_teks = text_input
 
     if st.button("Terjemahkan Teks"):
@@ -237,7 +246,7 @@ with tab_teks:
                         st.error("Koneksi ke AI terputus. Silakan coba lagi.")
                         st.code(str(e))
                 else:
-                    st.error("Sistem AI gagal disiapkan.")
+                    st.error("Sistem AI gagal disiapkan. Pastikan API Key di Streamlit Secrets benar.")
             
             if hasil_terjemahan:
                 try:
@@ -249,7 +258,7 @@ with tab_teks:
                 except:
                     st.error("Gagal memuat suara.")
         else:
-            st.warning("⚠️ Kotak teks masih kosong.")
+            st.warning("⚠️ Kotak teks masih kosong, tidak ada yang bisa diterjemahkan.")
 
 # ================= TAB 2: KAMERA & PENGENALAN OBJEK =================
 with tab_kamera_ai:
@@ -274,14 +283,13 @@ with tab_kamera_ai:
             with st.spinner("AI sedang mengamati bentuk benda..."):
                 if gemini_ready:
                     try:
+                        # INSTRUKSI BARU: Diperpendek tanpa deskripsi benda
                         prompt_vision = """
                         Identifikasi benda utama apa yang ada di dalam gambar ini. 
-                        Tolong berikan respons dengan format yang rapi seperti ini:
+                        Tolong berikan respons singkat dengan format yang rapi seperti ini tanpa tambahan penjelasan atau deskripsi apa pun:
                         
                         **Nama Benda (Indonesia):** [sebutkan namanya]
                         **Terjemahan (Inggris):** [sebutkan bahasa inggrisnya]
-                        
-                        **Deskripsi Singkat:** [Berikan 1-2 kalimat penjelasan tentang benda tersebut dan fungsinya]
                         """
                         # Memasukkan gambar ke dalam "otak" AI
                         response_vision = model.generate_content([prompt_vision, gambar_benda])
