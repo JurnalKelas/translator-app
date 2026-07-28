@@ -48,11 +48,15 @@ conn.commit()
 # --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
 st.markdown("""
 <style>
+    /* Latar belakang utama aplikasi (Coklat Pastel Lembut) */
     .stApp {
-        background-color: #DBC1AC; /* Warna Coklat Pastel Lembut */
+        background-color: #DBC1AC; 
     }
+    
+    /* Mengubah warna kotak teks menjadi hitam dan teksnya menjadi putih */
     .stTextArea textarea {
-        background-color: #FFFFFF;
+        background-color: #000000; /* Latar hitam */
+        color: #FFFFFF;            /* Tulisan putih */
     }
 </style>
 """, unsafe_allow_html=True)
