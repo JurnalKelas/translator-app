@@ -33,19 +33,24 @@ except:
     pass
 conn.commit()
 
-# --- BAGIAN MENAMPILKAN DUA LOGO ---
-col1, col2, col3 = st.columns([1, 1, 4]) 
-# Angka [1, 1, 4] mengatur logo di kiri dan sisa ruang kosong di kanan
+# --- BAGIAN MENAMPILKAN DUA LOGO (KIRI & KANAN) ---
+# col1 di pojok kiri, col2 sebagai jarak kosong di tengah, col3 di pojok kanan
+col1, col2, col3 = st.columns([1, 6, 1]) 
 
 with col1:
     try:
-        st.image("logo1.png", width=80) # Pastikan nama file logo pertama di GitHub adalah logo1.png
+        st.image("logo1.png", width=80) 
     except:
-        pass # Mengabaikan jika gambar belum diunggah agar tidak error
+        pass 
 
 with col2:
+    # Bagian tengah dibiarkan kosong sebagai pemisah
+    st.write("") 
+
+with col3:
     try:
-        st.image("logo2.png", width=80) # Pastikan nama file logo kedua di GitHub adalah logo2.png
+        # Gambar di kolom 3 akan didorong ke pojok kanan layar
+        st.image("logo2.png", width=80) 
     except:
         pass
 
