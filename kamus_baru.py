@@ -86,10 +86,18 @@ if not st.session_state.app_terbuka:
         if st.button("Buka Aplikasi"):
             if sandi_masuk == sandi_app_aktif:
                 st.session_state.app_terbuka = True
-                st.rerun() # Refresh layar untuk membuka aplikasi
+                st.rerun() 
             else:
                 st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
-    # st.stop() akan menghentikan kode di sini jika belum login. Kode di bawahnya tidak akan dieksekusi.
+                
+    # --- FOOTER UNTUK LAYAR GEMBOK ---
+    st.markdown("""
+        <div style="text-align: center; margin-top: 80px; color: #6b5b4f; font-size: 15px;">
+            ✨ Diciptakan & Dikembangkan oleh:<br>
+            <b>Saiful Hadi</b>
+        </div>
+    """, unsafe_allow_html=True)
+    
     st.stop() 
 
 # ========================================================
@@ -207,10 +215,13 @@ if kunci_admin == sandi_admin_aktif:
                     st.warning("⚠️ Sandi tidak boleh kosong!")
 else:
     st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu Admin.")
-    # Tombol keluar untuk kembali ke halaman gembok utama
     if st.sidebar.button("🚪 Kunci Kembali Aplikasi"):
         st.session_state.app_terbuka = False
         st.rerun()
+
+# --- FOOTER UNTUK MENU SAMPING (SIDEBAR) ---
+st.sidebar.markdown("---")
+st.sidebar.caption("👨‍💻 Dikembangkan oleh: **Saiful Hadi**")
 
 # --- Bagian Utama: Terjemahan & Kamera Cerdas ---
 st.header("Terjemahkan dengan AI")
@@ -347,3 +358,12 @@ with tab_kamera_ai:
                         st.code(str(e))
                 else:
                     st.error("Sistem AI gagal disiapkan.")
+
+# --- FOOTER UTAMA (PALING BAWAH APLIKASI) ---
+st.markdown("---")
+st.markdown("""
+    <div style="text-align: center; color: #6b5b4f; font-size: 14px; padding: 10px;">
+        © 2026 ALAZKA Smart English Dictionary<br>
+        Diciptakan dan Dikembangkan oleh <b>Saiful Hadi</b>
+    </div>
+""", unsafe_allow_html=True)
