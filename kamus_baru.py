@@ -86,7 +86,10 @@ if not st.session_state.app_terbuka:
         if st.button("Buka Aplikasi"):
             if sandi_masuk == sandi_app_aktif:
                 st.session_state.app_terbuka = True
-                st.rerun() 
+                try:
+                    st.rerun()
+                except AttributeError:
+                    st.experimental_rerun()
             else:
                 st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
                 
@@ -216,7 +219,10 @@ else:
     st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu Admin.")
     if st.sidebar.button("🚪 Kunci Kembali Aplikasi"):
         st.session_state.app_terbuka = False
-        st.rerun()
+        try:
+            st.rerun()
+        except AttributeError:
+            st.experimental_rerun()
 
 # --- FOOTER UNTUK MENU SAMPING (SIDEBAR) ---
 st.sidebar.markdown("---")
