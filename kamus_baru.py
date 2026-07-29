@@ -22,8 +22,8 @@ try:
 except Exception as e:
     gemini_ready = False
 
-# 2. KONEKSI DATABASE LOKAL & SISTEM DUA SANDI
-conn = sqlite3.connect('translator.db')
+# 2. KONEKSI DATABASE LOKAL & SISTEM DUA SANDI (DENGAN PENGAMAN THREAD)
+conn = sqlite3.connect('translator.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS dictionary
              (source_word TEXT, target_word TEXT)''')
@@ -86,10 +86,7 @@ if not st.session_state.app_terbuka:
         if st.button("Buka Aplikasi"):
             if sandi_masuk == sandi_app_aktif:
                 st.session_state.app_terbuka = True
-                try:
-                    st.rerun()
-                except AttributeError:
-                    st.experimental_rerun()
+                st.rerun() 
             else:
                 st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
                 
@@ -180,7 +177,7 @@ if kunci_admin == sandi_admin_aktif:
                     st.success(f"{saved_count} frasa/kata berhasil disimpan!")
 
     with tab_db:
-        st.write("Isi Kamus Visual Anda Saat Ini:")
+        st.write("Isi Kamus Visual Anda Saat Saat Ini:")
         c.execute("SELECT source_word, target_word, image_data FROM dictionary")
         rows = c.fetchall()
         if rows:
@@ -219,10 +216,7 @@ else:
     st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu Admin.")
     if st.sidebar.button("🚪 Kunci Kembali Aplikasi"):
         st.session_state.app_terbuka = False
-        try:
-            st.rerun()
-        except AttributeError:
-            st.experimental_rerun()
+        st.rerun()
 
 # --- FOOTER UNTUK MENU SAMPING (SIDEBAR) ---
 st.sidebar.markdown("---")
