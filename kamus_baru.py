@@ -32,10 +32,8 @@ try:
 except:
     pass
 
-# Membuat tabel untuk pengaturan sandi
 c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
 
-# Kunci 1: Sandi Admin (Untuk Menu Samping) -> ID 1
 c.execute("SELECT password FROM settings WHERE id=1")
 sandi_admin_db = c.fetchone()
 if not sandi_admin_db:
@@ -44,7 +42,6 @@ if not sandi_admin_db:
 else:
     sandi_admin_aktif = sandi_admin_db[0]
 
-# Kunci 2: Sandi Aplikasi (Untuk Masuk Layar Utama) -> ID 2
 c.execute("SELECT password FROM settings WHERE id=2")
 sandi_app_db = c.fetchone()
 if not sandi_app_db:
@@ -55,7 +52,7 @@ else:
 
 conn.commit()
 
-# --- PENGATUR WARNA LATAR BELAKANG (CSS) ---
+# --- PENGATUR WARNA & PENGHAPUS WATERMARK STREAMLIT (CSS) ---
 st.markdown("""
 <style>
     .stApp {
@@ -65,11 +62,14 @@ st.markdown("""
         background-color: #000000; 
         color: #FFFFFF;            
     }
+    /* MENGHAPUS TULISAN BAWAAN STREAMLIT DI BAWAH */
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
 # ========================================================
-# FITUR BARU: GERBANG KEAMANAN (LOGIN LAYAR UTAMA)
+# FITUR GERBANG KEAMANAN (LOGIN LAYAR UTAMA)
 # ========================================================
 if "app_terbuka" not in st.session_state:
     st.session_state.app_terbuka = False
@@ -90,11 +90,10 @@ if not st.session_state.app_terbuka:
             else:
                 st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
                 
-    # --- FOOTER UNTUK LAYAR GEMBOK ---
+    # --- FOOTER NAMA ANDA DI LAYAR KUNCI ---
     st.markdown("""
-        <div style="text-align: center; margin-top: 80px; color: #6b5b4f; font-size: 15px;">
-            ✨ Diciptakan & Dikembangkan oleh:<br>
-            <b>Saiful Hadi</b>
+        <div style="text-align: center; margin-top: 60px; padding: 15px; background-color: rgba(255,255,255,0.4); border-radius: 10px;">
+            <h3 style="color: #4A3C31; margin-bottom: 0px;">✨ Created by : Saiful Hadi ✨</h3>
         </div>
     """, unsafe_allow_html=True)
     
@@ -104,7 +103,7 @@ if not st.session_state.app_terbuka:
 # APLIKASI UTAMA (HANYA MUNCUL JIKA SUDAH LOGIN)
 # ========================================================
 
-# --- BAGIAN MENAMPILKAN DUA LOGO (KIRI & KANAN) ---
+# --- BAGIAN MENAMPILKAN DUA LOGO ---
 col1, col2, col3 = st.columns([1, 6, 1]) 
 with col1:
     try:
@@ -221,7 +220,7 @@ else:
 
 # --- FOOTER UNTUK MENU SAMPING (SIDEBAR) ---
 st.sidebar.markdown("---")
-st.sidebar.caption("👨‍💻 Dikembangkan oleh: **Saiful Hadi**")
+st.sidebar.markdown("<h4 style='text-align: center; color: #4A3C31;'>👨‍💻 Created by : Saiful Hadi</h4>", unsafe_allow_html=True)
 
 # --- Bagian Utama: Terjemahan & Kamera Cerdas ---
 st.header("Terjemahkan dengan AI")
@@ -362,8 +361,8 @@ with tab_kamera_ai:
 # --- FOOTER UTAMA (PALING BAWAH APLIKASI) ---
 st.markdown("---")
 st.markdown("""
-    <div style="text-align: center; color: #6b5b4f; font-size: 14px; padding: 10px;">
-        © 2026 ALAZKA Smart English Dictionary<br>
-        Diciptakan dan Dikembangkan oleh <b>Saiful Hadi</b>
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background-color: rgba(255,255,255,0.4); border-radius: 10px;">
+        <h3 style="color: #4A3C31; margin-bottom: 0px;">✨ Created by : Saiful Hadi ✨</h3>
+        <p style="color: #6b5b4f; font-size: 14px; margin-top: 5px;">© 2026 ALAZKA Smart English Dictionary</p>
     </div>
 """, unsafe_allow_html=True)
