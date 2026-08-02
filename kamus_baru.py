@@ -29,8 +29,9 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI (GEMINI) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_teks = genai.GenerativeModel('gemini-1.5-flash')
-    model_gambar = genai.GenerativeModel('gemini-1.5-flash')
+    # Menggunakan mesin paling stabil yang pasti dikenali sistem
+    model_teks = genai.GenerativeModel('gemini-pro')
+    model_gambar = genai.GenerativeModel('gemini-pro-vision')
 except Exception as e:
     st.error(f"Koneksi awal gagal. Laporan sistem: {e}")
     st.stop()
@@ -53,7 +54,6 @@ if st.session_state.peran == "siswa":
                     st.success("Hasil Terjemahan:")
                     st.write(hasil.text)
                 except Exception as e:
-                    # Ini adalah bagian yang diubah untuk melacak error asli
                     st.error(f"Sistem Google Menolak! Laporan error: {e}")
         else:
             st.warning("Ketik sesuatu dulu di kotak teks ya!")
