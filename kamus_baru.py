@@ -1,368 +1,166 @@
 import streamlit as st
-import sqlite3
-import pytesseract
-import re
-from PIL import Image
-import os
-from gtts import gTTS
-from io import BytesIO
-import base64
 import google.generativeai as genai
-from streamlit_mic_recorder import speech_to_text
+from PIL import Image
 
-# --- KONFIGURASI OTOMATIS ---
-if os.name == 'nt':
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# --- KONFIGURASI HALAMAN UTAMA ---
+st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
 
-# 1. SETUP GEMINI AI 
-try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-3.5-flash-lite')
-    gemini_ready = True
-except Exception as e:
-    gemini_ready = False
+# --- SISTEM LOGIN & GEMBOK APLIKASI ---
+if "peran" not in st.session_state:
+    st.session_state.peran = None
 
-# 2. KONEKSI DATABASE LOKAL & SISTEM DUA SANDI (DENGAN PENGAMAN THREAD)
-conn = sqlite3.connect('translator.db', check_same_thread=False)
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS dictionary
-             (source_word TEXT, target_word TEXT)''')
-try:
-    c.execute("ALTER TABLE dictionary ADD COLUMN image_data TEXT")
-except:
-    pass
+if st.session_state.peran is None:
+    st.markdown("<h1 style='text-align: center;'>🔒 Gerbang Kamus ALAZKA</h1>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #4CAF50;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
+    st.write("---")
+    
+    sandi = st.text_input("Silakan Masukkan Kata Sandi:", type="password")
+    if st.button("Masuk Aplikasi"):
+        if sandi == "alazka123":
+            st.session_state.peran = "siswa"
+            st.rerun()
+        elif sandi == "alazka2026":
+            st.session_state.peran = "admin"
+            st.rerun()
+        elif sandi != "":
+            st.error("Kunci salah! Silakan coba lagi.")
+    st.stop()
 
-c.execute('''CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, password TEXT)''')
+# --- FITUR PILIH TEMA TAMPILAN ---
+if "tema_warna" not in st.session_state:
+    st.session_state.tema_warna = "Kopi Susu (Bawaan)"
+    
+with st.expander("🎨 Sesuaikan Warna Tampilan Kamus"):
+    st.write("Pilih warna kesukaanmu agar belajar lebih menyenangkan!")
+    pilihan_tema = st.selectbox(
+        "Pilihan Tema:",
+        ["Kopi Susu (Bawaan)", "Biru Langit", "Hijau Daun", "Mode Gelap (Dark Mode)", "Merah Muda (Pink)"]
+    )
+    st.session_state.tema_warna = pilihan_tema
 
-c.execute("SELECT password FROM settings WHERE id=1")
-sandi_admin_db = c.fetchone()
-if not sandi_admin_db:
-    c.execute("INSERT INTO settings (id, password) VALUES (1, 'alazka2026')")
-    sandi_admin_aktif = "alazka2026"
-else:
-    sandi_admin_aktif = sandi_admin_db[0]
+# Menentukan kode warna
+if st.session_state.tema_warna == "Kopi Susu (Bawaan)":
+    bg_color = "#DBC1AC"
+    text_bg = "#FFFFFF"
+    text_color = "#000000"
+elif st.session_state.tema_warna == "Biru Langit":
+    bg_color = "#E0F7FA"
+    text_bg = "#FFFFFF"
+    text_color = "#006064"
+elif st.session_state.tema_warna == "Hijau Daun":
+    bg_color = "#E8F5E9"
+    text_bg = "#FFFFFF"
+    text_color = "#1B5E20"
+elif st.session_state.tema_warna == "Mode Gelap (Dark Mode)":
+    bg_color = "#1E1E1E"
+    text_bg = "#333333"
+    text_color = "#4DABF7"
+elif st.session_state.tema_warna == "Merah Muda (Pink)":
+    bg_color = "#FCE4EC"
+    text_bg = "#FFFFFF"
+    text_color = "#880E4F"
 
-c.execute("SELECT password FROM settings WHERE id=2")
-sandi_app_db = c.fetchone()
-if not sandi_app_db:
-    c.execute("INSERT INTO settings (id, password) VALUES (2, 'alazka123')")
-    sandi_app_aktif = "alazka123"
-else:
-    sandi_app_aktif = sandi_app_db[0]
-
-conn.commit()
-
-# --- PENGATUR WARNA & PENGHAPUS WATERMARK STREAMLIT (CSS) ---
-st.markdown("""
+# Menerapkan warna (CSS)
+st.markdown(f"""
 <style>
-    .stApp {
-        background-color: #DBC1AC; 
-    }
-    .stTextArea textarea {
-        background-color: #000000; 
-        color: #FFFFFF;            
-    }
-    /* MENGHAPUS TULISAN BAWAAN STREAMLIT DI BAWAH */
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    .stApp {{
+        background-color: {bg_color} !important; 
+        transition: background-color 0.5s ease;
+    }}
+    .stTextArea textarea {{
+        background-color: {text_bg} !important; 
+        color: {text_color} !important; 
+        border-radius: 10px;
+    }}
+    footer {{visibility: hidden;}}
+    header {{visibility: hidden;}}
 </style>
 """, unsafe_allow_html=True)
 
-# ========================================================
-# FITUR GERBANG KEAMANAN (LOGIN LAYAR UTAMA)
-# ========================================================
-if "app_terbuka" not in st.session_state:
-    st.session_state.app_terbuka = False
+# --- MENGHUBUNGKAN KE OTAK AI (GEMINI) ---
+try:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model_teks = genai.GenerativeModel('gemini-pro')
+    model_gambar = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang di menu Secrets Streamlit.")
+    st.stop()
 
-if not st.session_state.app_terbuka:
-    st.write("")
-    st.write("")
-    col_tengah = st.columns([1, 2, 1])
-    with col_tengah[1]:
-        st.title("🔒 ALAZKA Private App")
-        st.write("Aplikasi ini bersifat tertutup. Silakan masukkan kata sandi akses dari administrator.")
-        
-        sandi_masuk = st.text_input("Kata Sandi Akses:", type="password")
-        if st.button("Buka Aplikasi"):
-            if sandi_masuk == sandi_app_aktif:
-                st.session_state.app_terbuka = True
-                st.rerun() 
-            else:
-                st.error("Kata sandi salah! Anda tidak diizinkan masuk.")
-                
-    # --- FOOTER NAMA ANDA DI LAYAR KUNCI ---
-    st.markdown("""
-        <div style="text-align: center; margin-top: 60px; padding: 15px; background-color: rgba(255,255,255,0.4); border-radius: 10px;">
-            <h3 style="color: #4A3C31; margin-bottom: 0px;">✨ Created by : Saiful Hadi ✨</h3>
-        </div>
-    """, unsafe_allow_html=True)
+# ==========================================
+# HALAMAN KHUSUS SISWA
+# ==========================================
+if st.session_state.peran == "siswa":
+    st.title("📖 ALAZKA Smart English Dictionary")
     
-    st.stop() 
-
-# ========================================================
-# APLIKASI UTAMA (HANYA MUNCUL JIKA SUDAH LOGIN)
-# ========================================================
-
-# --- BAGIAN MENAMPILKAN DUA LOGO ---
-col1, col2, col3 = st.columns([1, 6, 1]) 
-with col1:
-    try:
-        st.image("logo1.png", width=80) 
-    except:
-        pass 
-with col2:
-    st.write("") 
-with col3:
-    try:
-        st.image("logo2.png", width=80) 
-    except:
-        pass
-
-st.write("---")
-
-st.title("ALAZKA Smart English Dictionary 📖✨")
-st.caption("Powered by Gemini AI & Voice Recognition")
-
-# --- Bagian Sidebar (Menu Admin) ---
-st.sidebar.header("Menu Admin ALAZKA")
-kunci_admin = st.sidebar.text_input("Kunci Rahasia Admin:", type="password")
-
-if kunci_admin == sandi_admin_aktif:
-    st.sidebar.success("Akses Admin Terbuka!")
-    tab_manual, tab_gambar, tab_db, tab_pengaturan = st.sidebar.tabs(["Manual", "Gambar", "Database", "Pengaturan"])
-
-    with tab_manual:
-        with st.form("add_word_form"):
-            source = st.text_input("Kata / Frasa Asal (Inggris)")
-            target = st.text_input("Terjemahan (Indonesia)")
-            gambar_kamus = st.file_uploader("Unggah Ilustrasi (Opsional)", type=['png', 'jpg', 'jpeg'])
-            submit = st.form_submit_button("Simpan ke Kamus Lokal")
-            
-            if submit and source and target:
-                image_b64 = ""
-                if gambar_kamus is not None:
-                    image_bytes = gambar_kamus.getvalue()
-                    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
-                    
-                c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
-                          (source.lower().strip(), target.lower().strip(), image_b64))
-                conn.commit()
-                st.success("Tersimpan beserta gambarnya!")
-
-    with tab_gambar:
-        uploaded_file = st.file_uploader("Unggah gambar daftar teks", type=['png', 'jpg', 'jpeg'])
-        if uploaded_file is not None:
-            img = Image.open(uploaded_file)
-            st.image(img, use_container_width=True)
-            
-            if st.button("Ekstrak & Simpan"):
-                with st.spinner('Membaca teks...'):
-                    extracted_text = pytesseract.image_to_string(img)
-                    lines = extracted_text.split('\n')
-                    saved_count = 0
-                    for line in lines:
-                        pemisah = '=' if '=' in line else ':' if ':' in line else None
-                        if pemisah:
-                            parts = line.split(pemisah)
-                            if len(parts) == 2:
-                                kata_asal = re.sub(r'[^a-z\s]+', '', parts[0].lower()).strip()
-                                terjemahan = re.sub(r'[^a-z\s]+', '', parts[1].lower()).strip()
-                                if kata_asal and terjemahan:
-                                    c.execute("SELECT * FROM dictionary WHERE source_word=?", (kata_asal,))
-                                    if not c.fetchone():
-                                        c.execute("INSERT INTO dictionary (source_word, target_word, image_data) VALUES (?, ?, ?)",
-                                                  (kata_asal, terjemahan, ""))
-                                        saved_count += 1
-                    conn.commit()
-                    st.success(f"{saved_count} frasa/kata berhasil disimpan!")
-
-    with tab_db:
-        st.write("Isi Kamus Visual Anda Saat Saat Ini:")
-        c.execute("SELECT source_word, target_word, image_data FROM dictionary")
-        rows = c.fetchall()
-        if rows:
-            st.table({"Bahasa Inggris": [r[0] for r in rows], "Bahasa Indonesia": [r[1] for r in rows]})
-        else:
-            st.info("Database masih kosong.")
-            
-        st.divider()
-        if st.button("🚨 Hapus Semua Data (Reset)"):
-            c.execute("DELETE FROM dictionary")
-            conn.commit()
-            st.success("Database dikosongkan. Silakan refresh.")
-            
-    with tab_pengaturan:
-        st.write("⚙️ **Ubah Kata Sandi**")
-        pilihan_ubah = st.radio("Pilih sandi yang akan diubah:", ("Sandi Akses Siswa", "Sandi Admin"))
+    # --- PANDUAN PEMAKAIAN (BARU) ---
+    with st.expander("💡 Panduan Cara Pakai Kamus (Klik di sini)"):
+        st.markdown("""
+        **Selamat datang di Kamus Pintar ALAZKA!**
+        Berikut adalah panduan singkat cara menggunakannya:
         
-        with st.form("form_ganti_sandi"):
-            sandi_baru = st.text_input("Masukkan Sandi Baru:", type="password")
-            konfirmasi_sandi = st.text_input("Konfirmasi Sandi Baru:", type="password")
-            submit_sandi = st.form_submit_button("Ubah Kata Sandi")
-            
-            if submit_sandi:
-                if sandi_baru and sandi_baru == konfirmasi_sandi:
-                    if pilihan_ubah == "Sandi Akses Siswa":
-                        c.execute("UPDATE settings SET password=? WHERE id=2", (sandi_baru,))
-                    else:
-                        c.execute("UPDATE settings SET password=? WHERE id=1", (sandi_baru,))
-                    conn.commit()
-                    st.success("✅ Sandi berhasil diubah! Silakan muat ulang (refresh) halaman.")
-                elif sandi_baru != konfirmasi_sandi:
-                    st.error("❌ Sandi baru dan konfirmasi tidak cocok!")
-                else:
-                    st.warning("⚠️ Sandi tidak boleh kosong!")
-else:
-    st.sidebar.warning("⚠️ Masukkan sandi rahasia untuk membuka menu Admin.")
-    if st.sidebar.button("🚪 Kunci Kembali Aplikasi"):
-        st.session_state.app_terbuka = False
-        st.rerun()
-
-# --- FOOTER UNTUK MENU SAMPING (SIDEBAR) ---
-st.sidebar.markdown("---")
-st.sidebar.markdown("<h4 style='text-align: center; color: #4A3C31;'>👨‍💻 Created by : Saiful Hadi</h4>", unsafe_allow_html=True)
-
-# --- Bagian Utama: Terjemahan & Kamera Cerdas ---
-st.header("Terjemahkan dengan AI")
-
-tab_teks, tab_kamera_ai = st.tabs(["📝 Teks & Suara", "📸 Kamera & Identifikasi Benda"])
-
-with tab_teks:
-    arah = st.radio("Pilih Arah Terjemahan:", 
-                    ("Inggris ke Indonesia", "Indonesia ke Inggris"), 
-                    horizontal=True)
-
-    if "memori_teks" not in st.session_state:
-        st.session_state.memori_teks = ""
-
-    stt_lang = 'id-ID' if arah == "Indonesia ke Inggris" else 'en-US'
-
-    st.write("🎙️ **Gunakan Mikrofon (Klik untuk merekam, klik lagi untuk berhenti):**")
-    suara = speech_to_text(language=stt_lang, use_container_width=True, just_once=True, key=f"STT_{arah}")
-
-    if suara:
-        st.session_state.memori_teks = suara
-
-    tempat_gambar = st.empty()
-    text_input = st.text_area("Teks yang akan diterjemahkan:", value=st.session_state.memori_teks)
-    st.session_state.memori_teks = text_input
-
-    if st.button("Terjemahkan Teks"):
-        if text_input:
-            if arah == "Inggris ke Indonesia":
-                c.execute("SELECT source_word, target_word, image_data FROM dictionary ORDER BY LENGTH(source_word) DESC")
-                kode_bahasa = 'id'
-                prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Inggris ke bahasa Indonesia dengan tata bahasa yang natural, baku, namun mudah dipahami. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
-            else:
-                c.execute("SELECT target_word, source_word, image_data FROM dictionary ORDER BY LENGTH(target_word) DESC")
-                kode_bahasa = 'en'
-                prompt_ai = f"Terjemahkan teks berikut ini dari bahasa Indonesia ke bahasa Inggris dengan grammar yang tepat dan natural. Jangan tambahkan komentar apa pun, langsung berikan hasil terjemahannya saja:\n\n{text_input}"
-                
-            dictionary_entries = c.fetchall()
-            gambar_ditemukan = []
-            
-            for source, target, img_data in dictionary_entries:
-                pattern = re.compile(r'(?i)\b' + re.escape(source) + r'\b')
-                if pattern.search(text_input) and img_data:
-                    gambar_ditemukan.append((target, img_data))
-            
-            if gambar_ditemukan:
-                with tempat_gambar.container():
-                    cols = st.columns(min(len(gambar_ditemukan), 3))
-                    for idx, (kata, img_b64) in enumerate(gambar_ditemukan):
-                        with cols[idx % 3]:
-                            img_bytes = base64.b64decode(img_b64)
-                            st.image(img_bytes, use_container_width=True)
-            st.write("---") 
-
-            st.success("**Hasil Terjemahan:**")
-            hasil_terjemahan = ""
-            
-            with st.spinner("AI sedang merangkai kalimat..."):
-                if gemini_ready:
-                    try:
-                        response = model.generate_content(prompt_ai)
-                        hasil_terjemahan = response.text.strip()
-                        st.write(hasil_terjemahan)
-                    except Exception as e:
-                        st.error("Koneksi ke AI terputus. Silakan coba lagi.")
-                else:
-                    st.error("Sistem AI gagal disiapkan.")
-            
-            if hasil_terjemahan:
+        1. 🎨 **Ganti Warna Tampilan:** Coba klik menu *'Sesuaikan Warna Tampilan'* di atas. Kamu bisa memilih Mode Gelap atau warna cerah lainnya agar mata lebih nyaman saat membaca.
+        2. ✍️ **Mulai Mengetik:** Ketik kata atau kalimat berbahasa Inggris yang belum kamu mengerti di dalam kotak besar di bawah. Kamu juga bisa mengetik bahasa Indonesia untuk diubah ke bahasa Inggris!
+        3. ✨ **Lihat Keajaibannya:** Klik tombol **'Terjemahkan Teks ✨'**. Tunggu sebentar, dan mesin AI akan memberikan arti, penjelasan, beserta contoh kalimatnya untukmu.
+        4. 🚪 **Selesai Belajar:** Jika sudah selesai, jangan lupa klik tombol **'Keluar (Logout)'** di bagian paling bawah layar.
+        
+        *Selamat belajar dan terus kembangkan kemampuan bahasamu!*
+        """)
+    
+    st.write("Silakan ketik kata atau kalimat yang ingin diterjemahkan di bawah ini:")
+    teks_siswa = st.text_area("Teks yang ingin diterjemahkan:", height=100)
+    
+    if st.button("Terjemahkan Teks ✨"):
+        if teks_siswa:
+            with st.spinner("Sedang berpikir..."):
                 try:
-                    with st.spinner("Membuat suara..."):
-                        teks_bersih = hasil_terjemahan.replace('*', '')
-                        tts = gTTS(text=teks_bersih, lang=kode_bahasa)
-                        sound_file = BytesIO()
-                        tts.write_to_fp(sound_file)
-                        st.audio(sound_file)
-                except:
-                    st.error("Gagal memuat suara.")
+                    perintah = f"Terjemahkan teks berikut ke bahasa Indonesia (jika bahasa Inggris) atau ke bahasa Inggris (jika bahasa Indonesia), dan berikan sedikit penjelasan atau contoh kalimatnya jika perlu. Teks: {teks_siswa}"
+                    hasil = model_teks.generate_content(perintah)
+                    st.success("Hasil Terjemahan:")
+                    st.write(hasil.text)
+                except Exception as e:
+                    st.error("Maaf, terjadi kesalahan saat menerjemahkan. Coba lagi ya!")
         else:
-            st.warning("⚠️ Kotak teks masih kosong, tidak ada yang bisa diterjemahkan.")
+            st.warning("Ketik sesuatu dulu di kotak teks ya!")
 
-with tab_kamera_ai:
-    st.write("📸 **Cari tahu nama benda dalam Bahasa Inggris hanya dengan memfotonya!**")
+# ==========================================
+# HALAMAN KHUSUS ADMIN (PAK SAIFUL)
+# ==========================================
+elif st.session_state.peran == "admin":
+    st.title("⚙️ Panel Admin - Kamus ALAZKA")
+    st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk memperkaya database kamus.")
     
-    pilihan_input_gambar = st.radio("Pilih cara memasukkan gambar:", ("Gunakan Kamera", "Unggah Gambar dari Perangkat"), horizontal=True)
+    tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     
-    gambar_benda = None
-    
-    if pilihan_input_gambar == "Gunakan Kamera":
-        file_kamera = st.camera_input("Ambil Foto Benda")
-        if file_kamera:
-            gambar_benda = Image.open(file_kamera)
-    else:
-        file_unggah = st.file_uploader("Pilih gambar (.jpg / .png)", type=['png', 'jpg', 'jpeg'])
-        if file_unggah:
-            gambar_benda = Image.open(file_unggah)
-            st.image(gambar_benda, use_container_width=True)
+    with tab1:
+        st.subheader("Tambah Kosakata Manual")
+        kata_baru = st.text_input("Masukkan Kata (Bahasa Inggris/Indonesia):")
+        arti_kata = st.text_input("Masukkan Artinya:")
+        if st.button("Simpan ke Database"):
+            if kata_baru and arti_kata:
+                st.success(f"Berhasil! Kata '{kata_baru}' telah tersimpan.")
+            else:
+                st.warning("Mohon isi kedua kolom di atas.")
+                
+    with tab2:
+        st.subheader("Ekstrak Kosakata dari Gambar/Foto")
+        gambar_unggah = st.file_uploader("Pilih gambar daftar kosakata...", type=["jpg", "jpeg", "png"])
+        
+        if gambar_unggah is not None:
+            gambar_buka = Image.open(gambar_unggah)
+            st.image(gambar_buka, caption="Gambar yang diunggah", use_column_width=True)
             
-    if gambar_benda:
-        if st.button("🔍 Identifikasi & Terjemahkan Gambar"):
-            with st.spinner("AI sedang mengamati bentuk benda..."):
-                if gemini_ready:
+            if st.button("Baca & Ekstrak Teks"):
+                with st.spinner("Membaca teks dari gambar..."):
                     try:
-                        prompt_vision = """
-                        Identifikasi benda utama apa yang ada di dalam gambar ini. 
-                        Berikan jawaban yang sangat singkat dengan format persis seperti di bawah ini. Jangan tambahkan penjelasan atau kata-kata lain:
-                        
-                        **Benda:** [Nama Benda dalam Bahasa Indonesia]
-                        **Bahasa Inggris:** [Terjemahan Bahasa Inggrisnya]
-                        **Pelafalan:** [Cara membacanya]
-                        """
-                        response_vision = model.generate_content([prompt_vision, gambar_benda])
-                        hasil_teks = response_vision.text
-                        
-                        st.success("✅ Gambar berhasil dianalisis!")
-                        st.write(hasil_teks)
-                        
-                        kata_inggris_saja = ""
-                        baris_baris = hasil_teks.split('\n')
-                        for baris in baris_baris:
-                            if "Bahasa Inggris:" in baris or "Inggris:" in baris:
-                                bagian_kanan = baris.split(":", 1)[1]
-                                kata_inggris_saja = bagian_kanan.replace('*', '').strip()
-                                break
-                                
-                        if kata_inggris_saja:
-                            tts_vision = gTTS(text=kata_inggris_saja, lang='en')
-                            sound_file_vision = BytesIO()
-                            tts_vision.write_to_fp(sound_file_vision)
-                            st.audio(sound_file_vision)
-                        
+                        perintah_gambar = "Keluarkan semua teks yang ada di gambar ini dalam format daftar (list)."
+                        hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka])
+                        st.success("Teks berhasil dibaca!")
+                        st.write(hasil_ekstrak.text)
                     except Exception as e:
-                        st.error("❌ Gagal menganalisis gambar.")
-                        st.code(str(e))
-                else:
-                    st.error("Sistem AI gagal disiapkan.")
+                        st.error("Gagal membaca gambar. Pastikan gambar cukup terang dan jelas.")
 
-# --- FOOTER UTAMA (PALING BAWAH APLIKASI) ---
-st.markdown("---")
-st.markdown("""
-    <div style="text-align: center; margin-top: 30px; padding: 20px; background-color: rgba(255,255,255,0.4); border-radius: 10px;">
-        <h3 style="color: #4A3C31; margin-bottom: 0px;">✨ Created by : Saiful Hadi ✨</h3>
-        <p style="color: #6b5b4f; font-size: 14px; margin-top: 5px;">© 2026 ALAZKA Smart English Dictionary</p>
-    </div>
-""", unsafe_allow_html=True)
+# --- TOMBOL KELUAR (LOGOUT) ---
+st.write("---")
+if st.button("Keluar (Logout)"):
+    st.session_state.peran = None
+    st.rerun()
