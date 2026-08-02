@@ -11,7 +11,7 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
-# --- GAYA CSS GLOBAL UNTUK MENGUBAH BACKGROUND AWAL MENJADI COKLAT ---
+# --- GAYA CSS GLOBAL (TERMASUK MEMPERJELAS TEKS TOMBOL KAMERA) ---
 st.markdown(
     """
     <style>
@@ -38,6 +38,16 @@ st.markdown(
     div.stButton > button:first-child:hover {
         background-color: #5C4B43;
         color: #FFFFFF !important;
+    }
+    /* MEMPERJELAS TEKS PADA TOMBOL KAMERA (Take Photo, Clear Photo, dll) */
+    button[kind="secondary"] {
+        color: #2C221E !important;
+        background-color: #E6D5CC !important;
+        border: 1px solid #B09B91 !important;
+    }
+    button[kind="secondary"] p {
+        color: #2C221E !important;
+        font-weight: bold !important;
     }
     </style>
     """,
@@ -123,7 +133,6 @@ except Exception as e:
 # HALAMAN KHUSUS SISWA (USER)
 # ==========================================
 if st.session_state.peran == "siswa":
-    # Menimpa background jika siswa memilih warna lain di menu mood
     st.markdown(
         f"""
         <style>
@@ -236,7 +245,7 @@ if st.session_state.peran == "siswa":
         
         gambar_unggah = None
         if sumber_gambar == "📸 Ambil Foto Langsung (Kamera)":
-            gambar_unggah = st.camera_input("Ambil foto objek yang ingin dikenali")
+            gambar_unggah = st.camera_input("Ambil foto teks atau objek yang ingin dikenali")
         else:
             gambar_unggah = st.file_uploader("Pilih file foto objek...", type=["jpg", "jpeg", "png"])
             
