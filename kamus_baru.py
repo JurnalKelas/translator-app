@@ -32,6 +32,29 @@ if st.session_state.peran is None:
     st.markdown("<h4 style='text-align: center; color: #4CAF50;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
     st.write("---")
     
+    # --- PANDUAN PENGGUNAAN DI HALAMAN DEPAN ---
+    with st.expander("📖 Panduan Penggunaan & Informasi Aplikasi"):
+        st.write("""
+        Selamat datang di **Kamus Pintar ALAZKA**! Aplikasi cerdas untuk membantu proses pembelajaran bahasa. 
+        Berikut adalah panduan singkat cara menggunakan aplikasi ini:
+        
+        1. **Cara Masuk (Login):**
+           * Masukkan kata sandi yang sesuai dengan peran Anda (Siswa atau Admin) pada kolom di bawah.
+        
+        2. **Menu Terjemahan Teks & Suara:**
+           * Pilih arah bahasa terjemahan (Indonesia ➡️ Inggris atau sebaliknya).
+           * Ketik teks atau gunakan ikon mikrofon (🎤) pada *keyboard* HP Anda untuk berbicara secara langsung.
+           * Tekan tombol **"Terjemahkan Teks ✨"** untuk melihat hasil dan mendengarkan pelafalannya (🔊).
+        
+        3. **Menu Deteksi Objek Foto:**
+           * Buka tab kamera, lalu ambil foto benda di sekitar Anda atau unggah dari galeri.
+           * AI akan secara otomatis mengenali nama benda tersebut dan menerjemahkannya lengkap dengan suara pelafalannya!
+           
+        4. **Personalisasi Warna (Mood):**
+           * Anda dapat mengganti warna latar belakang (*background*) aplikasi sesuai dengan suasana hati atau kenyamanan mata Anda melalui menu pilihan warna di dalam aplikasi.
+        """)
+    
+    st.write("---")
     sandi = st.text_input("Silakan Masukkan Kata Sandi:", type="password")
     if st.button("Masuk Aplikasi"):
         if sandi == "alazka123":
@@ -59,7 +82,6 @@ if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
     
-    # --- FITUR GANTI WARNA BACKGROUND BERDASARKAN MOOD ---
     with st.expander("🎨 Pilih Warna Latar Berdasarkan Mood Kamu"):
         pilihan_warna_siswa = st.selectbox(
             "Bagaimana suasana hatimu hari ini?",
