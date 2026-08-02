@@ -7,6 +7,22 @@ import os
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
 
+# --- INISIALISASI PENYIMPANAN WARNA DI SESI APLIKASI ---
+if "warna_bg" not in st.session_state:
+    st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
+
+# --- MENERAPKAN WARNA LATAR BELAKANG (BACKGROUND) ---
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: {st.session_state.warna_bg};
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- SISTEM LOGIN & GEMBOK APLIKASI ---
 if "peran" not in st.session_state:
     st.session_state.peran = None
@@ -64,10 +80,10 @@ if st.session_state.peran == "siswa":
                     try:
                         if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
                             perintah = f"Translate this Indonesian text to English. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
-                            bahasa_suara = 'en' # Suara pelafalan bahasa Inggris
+                            bahasa_suara = 'en'
                         else:
                             perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
-                            bahasa_suara = 'id' # Suara pelafalan bahasa Indonesia
+                            bahasa_suara = 'id'
                             
                         hasil = model_ai.generate_content(perintah)
                         teks_bersih = hasil.text.strip().replace('"', '').replace("'", "")
@@ -75,7 +91,6 @@ if st.session_state.peran == "siswa":
                         st.success("Hasil Terjemahan:")
                         st.write(teks_bersih)
                         
-                        # --- FITUR PEMUTAR SUARA PELAFALAN ---
                         try:
                             tts = gTTS(text=teks_bersih, lang=bahasa_suara, slow=False)
                             file_suara = "suara_terjemahan.mp3"
@@ -129,7 +144,6 @@ if st.session_state.peran == "siswa":
                         st.success("Hasil Identifikasi Objek:")
                         st.write(objek_bersih)
                         
-                        # --- PEMUTAR SUARA UNTUK OBJEK ---
                         try:
                             tts_objek = gTTS(text=objek_bersih, lang=bahasa_suara_objek, slow=False)
                             file_suara_objek = "suara_objek.mp3"
@@ -148,7 +162,7 @@ elif st.session_state.peran == "admin":
     st.title("⚙️ Panel Admin - Kamus ALAZKA")
     st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk mengelola aplikasi.")
     
-    tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
+    tab1, tab2, tab3 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar", "🎨 Pengaturan Tema Warna"])
     
     with tab1:
         st.subheader("Tambah Kosakata Manual")
@@ -177,6 +191,31 @@ elif st.session_state.peran == "admin":
                         st.write(hasil_ekstrak.text)
                     except Exception as e:
                         st.error(f"Gagal membaca gambar. Pastikan gambar cukup terang. ({e})")
+                        
+    with tab3:
+        st.subheader("Ubah Warna Latar Belakang (Background) Aplikasi")
+        st.write("Pilih warna kesukaan Anda untuk mengubah suasana tampilan aplikasi:")
+        
+        # Pilihan tema warna siap pakai
+        pilihan_tema = st.selectbox(
+            "Pilih Tema Warna Cepat:",
+            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)")
+        )
+        
+        if st.button("Terapkan Tema Warna"):
+            if "Putih" in pilihan_tema:
+                st.session_state.warna_bg = "#FFFFFF"
+            elif "Kuning" in pilihan_tema:
+                st.session_state.warna_bg = "#FFF9E6"
+            elif "Biru" in pilihan_tema:
+                st.session_state.warna_bg = "#E6F2FF"
+            elif "Hijau" in pilihan_tema:
+                st.session_state.warna_bg = "#E6F9F0"
+            elif "Abu-abu" in pilihan_tema:
+                st.session_state.warna_bg = "#F5F5F5"
+                
+            st.success("Warna latar belakang berhasil diubah! Muat ulang halaman jika diperlukan.")
+            st.rerun()
 
 # --- TOMBOL KELUAR (LOGOUT) ---
 st.write("---")
