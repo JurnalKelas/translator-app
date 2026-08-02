@@ -29,11 +29,10 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI (GEMINI) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Menggunakan mesin terbaru (gemini-1.5-flash) agar cocok dengan kunci AQ...
     model_teks = genai.GenerativeModel('gemini-1.5-flash')
     model_gambar = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
-    st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang di menu Secrets Streamlit.")
+    st.error(f"Koneksi awal gagal. Laporan sistem: {e}")
     st.stop()
 
 # ==========================================
@@ -54,7 +53,8 @@ if st.session_state.peran == "siswa":
                     st.success("Hasil Terjemahan:")
                     st.write(hasil.text)
                 except Exception as e:
-                    st.error("Maaf, terjadi kesalahan saat menerjemahkan. Coba lagi ya!")
+                    # Ini adalah bagian yang diubah untuk melacak error asli
+                    st.error(f"Sistem Google Menolak! Laporan error: {e}")
         else:
             st.warning("Ketik sesuatu dulu di kotak teks ya!")
 
@@ -93,7 +93,7 @@ elif st.session_state.peran == "admin":
                         st.success("Teks berhasil dibaca!")
                         st.write(hasil_ekstrak.text)
                     except Exception as e:
-                        st.error("Gagal membaca gambar. Pastikan gambar cukup terang dan jelas.")
+                        st.error(f"Gagal membaca gambar. Laporan error: {e}")
 
 # --- TOMBOL KELUAR (LOGOUT) ---
 st.write("---")
