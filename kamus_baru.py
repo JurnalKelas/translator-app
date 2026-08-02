@@ -29,7 +29,6 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Menggunakan model standar yang stabil untuk teks dan gambar
     model_ai = genai.GenerativeModel('gemini-3.6-flash')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
@@ -42,7 +41,6 @@ if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
     
-    # Membuat pilihan menu tab untuk Siswa: Teks atau Kamera/Foto
     tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Terjemah dari Kamera / Foto"])
     
     with tab_teks:
@@ -87,7 +85,7 @@ if st.session_state.peran == "siswa":
         )
         st.write("---")
         
-        st.info("💡 **Tips:** Anda bisa langsung memotret menggunakan kamera HP atau mengunggah foto teks dari galeri.")
+        st.info("💡 **Tips:** Pastikan foto teks terlihat jelas, tidak buram, dan pencahayaan cukup terang agar akurat.")
         
         sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True)
         
@@ -102,12 +100,13 @@ if st.session_state.peran == "siswa":
             st.image(gambar_buka, caption="Foto yang akan diterjemahkan", use_column_width=True)
             
             if st.button("Terjemahkan Foto ✨"):
-                with st.spinner("AI sedang membaca dan menerjemahkan foto..."):
+                with st.spinner("AI sedang membaca dan menerjemahkan foto secara akurat..."):
                     try:
+                        # Perintah diperketat agar AI fokus mendeteksi teks dengan presisi tinggi
                         if "Indonesia" in pilihan_bahasa_kamera:
-                            perintah_foto = "Read the text in this image and translate it to English. Provide ONLY the direct translation without any explanation or notes."
+                            perintah_foto = "Look closely at this image, identify the exact Indonesian text written on it, and provide ONLY its accurate English translation without any explanation, notes, or extra formatting."
                         else:
-                            perintah_foto = "Read the text in this image and translate it to Indonesian. Provide ONLY the direct translation without any explanation or notes."
+                            perintah_foto = "Look closely at this image, identify the exact English text written on it, and provide ONLY its accurate Indonesian translation without any explanation, notes, or extra formatting."
                             
                         hasil_foto = model_ai.generate_content([perintah_foto, gambar_buka])
                         foto_bersih = hasil_foto.text.strip().replace('"', '').replace("'", "")
@@ -147,7 +146,7 @@ elif st.session_state.peran == "admin":
             if st.button("Baca & Ekstrak Teks"):
                 with st.spinner("Membaca teks dari gambar menggunakan AI..."):
                     try:
-                        perintah_gambar = "Extract all text from this image as a list."
+                        perintah_gambar = "Extract all text precisely from this image as a clean list."
                         hasil_ekstrak = model_ai.generate_content([perintah_gambar, gambar_buka_admin])
                         st.success("Teks berhasil dibaca!")
                         st.write(hasil_ekstrak.text)
