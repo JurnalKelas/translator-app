@@ -1,7 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import streamlit.components.v1 as components
 
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
@@ -31,7 +30,7 @@ if st.session_state.peran is None:
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
-    model_gambar = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
+    model_gambar = genai.GenerativeModel('models/gemma-4-26b-it')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -41,7 +40,7 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Pilih mode terjemahan, lalu gunakan tombol suara atau ketik manual.")
+    st.write("Selamat datang! Pilih mode terjemahan di bawah ini.")
     
     # --- MENU PILIHAN BAHASA ---
     st.write("---")
@@ -52,49 +51,10 @@ if st.session_state.peran == "siswa":
     )
     st.write("---")
     
-    # Kotak teks utama tempat siswa mengetik atau melihat hasil suara
-    teks_siswa = st.text_area("Ketik kata/kalimat di sini (atau gunakan tombol suara di bawah):", height=100)
+    st.info("💡 **Tips Suara:** Sentuh kotak di bawah, lalu ketuk **ikon mikrofon (🎤)** pada *keyboard* HP Anda untuk berbicara secara langsung!")
     
-    # --- TOMBOL MIKROFON INTERAKTIF DI LAYAR ---
-    komponen_suara = """
-    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
-        <p style="margin-bottom: 10px; font-weight: bold; color: #31333F;">Atau Ucapkan dengan Suara:</p>
-        <button onclick="mulaiRekam()" style="background-color: #ff4b4b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">🎙️ Klik untuk Berbicara</button>
-        <p id="statusSuara" style="font-style: italic; color: gray; margin-top: 8px; font-size: 14px;">Tekan tombol lalu ucapkan kata/kalimat...</p>
-    </div>
+    teks_siswa = st.text_area("Ketik atau ucapkan kata/kalimat di sini:", height=100)
     
-    <script>
-    function mulaiRekam() {
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'id-ID';
-        recognition.interimResults = false;
-        
-        document.getElementById("statusSuara.innerText = "Mendengarkan... Silakan bicara sekarang!";
-        
-        recognition.onresult = function(event) {
-            const hasilKata = event.results[0][0].transcript;
-            document.getElementById("statusSuara").innerText = "Berhasil merekam: \\"" + hasilKata + "\\"";
-            
-            // Mencari elemen textarea Streamlit secara otomatis dan memasukkan teksnya
-            const textareas = window.parent.document.querySelectorAll("textarea");
-            if (textareas.length > 0) {
-                const targetTextarea = textareas[0];
-                targetTextarea.value = hasilKata;
-                targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        };
-        
-        recognition.onerror = function(event) {
-            document.getElementById("statusSuara").innerText = "Gagal mendeteksi suara. Pastikan izin mikrofon aktif.";
-        };
-        
-        recognition.start();
-    }
-    </script>
-    """
-    components.html(komponen_suara, height=160)
-    
-    # Tombol Eksekusi Terjemahan
     if st.button("Terjemahkan ✨"):
         if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
@@ -110,7 +70,7 @@ if st.session_state.peran == "siswa":
                 except Exception as e:
                     st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
         else:
-            st.warning("Mohon masukkan kata atau kalimat terlebih dahulu (ketik atau gunakan tombol mikrofon).")
+            st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
