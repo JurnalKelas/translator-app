@@ -15,13 +15,18 @@ if "warna_bg" not in st.session_state:
 if "peran" not in st.session_state:
     st.session_state.peran = None
 
-# Jika belum login (Gerbang Depan), atur background khusus Coklat Muda (#F5EBE6 atau #FAF0E6)
+# Jika belum login (Gerbang Depan), atur background Coklat Muda dan teks warna Gelap
 if st.session_state.peran is None:
     st.markdown(
         """
         <style>
         .stApp {
             background-color: #F5EBE6;
+            color: #2C221E;
+        }
+        /* Mengubah warna teks judul, subjudul, dan label teks agar gelap */
+        h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {
+            color: #2C221E !important;
         }
         </style>
         """,
@@ -53,7 +58,7 @@ def tampilkan_header_logo():
             
     with col2:
         st.markdown("<h2 style='text-align: center; margin: 0;'>Kamus Pintar ALAZKA</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray; margin: 0;'>Smart English Dictionary & Object Detector</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #5C4B43; margin: 0;'>Smart English Dictionary & Object Detector</p>", unsafe_allow_html=True)
         
     with col3:
         try:
@@ -65,7 +70,7 @@ def tampilkan_header_logo():
 # --- HALAMAN GERBANG DEPAN (LOGIN) ---
 if st.session_state.peran is None:
     tampilkan_header_logo()
-    st.markdown("<h4 style='text-align: center; color: #4CAF50; margin-top: 15px;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #8C4A32; margin-top: 15px;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
     st.write("---")
     
     # --- PANDUAN PENGGUNAAN DI HALAMAN DEPAN ---
