@@ -9,74 +9,71 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 
 # --- INISIALISASI PENYIMPANAN WARNA DI SESI APLIKASI ---
 if "warna_bg" not in st.session_state:
-    st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
+    st.session_state.warna_bg = "#F5EBE6" # Default Coklat Muda Hangat
 
-# --- GAYA CSS GLOBAL (TERMASUK PEMAKSA WARNA KOTAK TEXT AREA MENJADI HIJAU) ---
+if "warna_teks" not in st.session_state:
+    st.session_state.warna_teks = "#2C221E" # Default Teks Gelap
+
+# --- GAYA CSS GLOBAL DINAMIS BERDASARKAN PILIHAN WARNA ---
 st.markdown(
-    """
+    f"""
     <style>
-    /* Mengubah background utama aplikasi secara keseluruhan sejak pertama dibuka */
-    .stApp {
-        background-color: #F5EBE6 !important;
-        color: #2C221E;
-    }
-    /* Mengubah warna teks judul, subjudul, dan label teks agar gelap */
-    h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {
-        color: #2C221E !important;
-    }
-    /* Pemaksa warna teks tombol masuk aplikasi menjadi PUTIH */
-    div.stButton > button:first-child p {
+    /* Mengubah background dan warna teks aplikasi secara otomatis dan serasi */
+    .stApp {{
+        background-color: {st.session_state.warna_bg} !important;
+        color: {st.session_state.warna_teks} !important;
+    }}
+    
+    /* Mengubah warna seluruh teks judul, subjudul, dan label agar selaras dengan tema */
+    h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {{
+        color: {st.session_state.warna_teks} !important;
+    }}
+    
+    /* Tombol Utama (Masuk Aplikasi & Terjemahkan) */
+    div.stButton > button:first-child p {{
         color: #FFFFFF !important;
-    }
-    div.stButton > button:first-child {
+    }}
+    div.stButton > button:first-child {{
         background-color: #3D2C24;
         color: #FFFFFF !important;
         border-radius: 8px;
         font-weight: bold;
         border: none;
-    }
-    div.stButton > button:first-child:hover {
+    }}
+    div.stButton > button:first-child:hover {{
         background-color: #5C4B43;
         color: #FFFFFF !important;
-    }
+    }}
     
-    /* PEMAKSAAN MUTLAK UNTUK TEKS TOMBOL KAMERA (Take Photo / Clear Photo) */
+    /* Tombol Kamera (Take Photo / Clear Photo) */
     button[data-testid="baseButton-secondary"], 
     div[data-testid="stCameraInput"] button,
-    .stCameraInput button {
+    .stCameraInput button {{
         background-color: #3D2C24 !important;
         border: none !important;
         border-radius: 8px !important;
-    }
+    }}
     
     button[data-testid="baseButton-secondary"] *, 
     div[data-testid="stCameraInput"] button *,
-    .stCameraInput button * {
+    .stCameraInput button * {{
         color: #FFFFFF !important;
         fill: #FFFFFF !important;
         font-weight: bold !important;
-    }
+    }}
     
     button[data-testid="baseButton-secondary"]:hover,
-    div[data-testid="stCameraInput"] button:hover {
+    div[data-testid="stCameraInput"] button:hover {{
         background-color: #5C4B43 !important;
-    }
+    }}
 
-    /* PEMAKSAAN MUTLAK KOTAK TEXT AREA MENJADI HIJAU MUDA DENGAN TEKS HIJAU TUA */
-    div[data-testid="stTextArea"] textarea {
+    /* Kotak Text Area */
+    div[data-testid="stTextArea"] textarea {{
         background-color: #E6F4EA !important;
         color: #137333 !important;
         border-radius: 8px !important;
         border: 1px solid #A8DAB5 !important;
-    }
-    
-    /* Memastikan teks yang diketik di dalam kotak juga berwarna hijau tua jelas */
-    div[data-testid="stTextArea"] textarea:focus {
-        background-color: #E6F4EA !important;
-        color: #137333 !important;
-        border-color: #137333 !important;
-        box-shadow: 0 0 5px rgba(19, 115, 51, 0.3) !important;
-    }
+    }}
     </style>
     """,
     unsafe_allow_html=True
@@ -99,7 +96,7 @@ def tampilkan_header_logo():
             
     with col2:
         st.markdown("<h2 style='text-align: center; margin: 0;'>Kamus Pintar ALAZKA</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #5C4B43; margin: 0;'>Smart English Dictionary & Object Detector</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; margin: 0;'>Smart English Dictionary & Object Detector</p>", unsafe_allow_html=True)
         
     with col3:
         try:
@@ -161,17 +158,6 @@ except Exception as e:
 # HALAMAN KHUSUS SISWA (USER)
 # ==========================================
 if st.session_state.peran == "siswa":
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-color: {st.session_state.warna_bg} !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
     tampilkan_header_logo()
     st.write("---")
     
@@ -179,6 +165,7 @@ if st.session_state.peran == "siswa":
         pilihan_warna_siswa = st.selectbox(
             "Bagaimana suasana hatimu hari ini?",
             (
+                "🪵 Hangat & Elegan (Coklat Muda)",
                 "✨ Netral & Tenang (Putih Klasik)",
                 "🌿 Rileks & Fokus (Hijau Mint Segar)",
                 "🌊 Tenang & Damai (Biru Langit Muda)",
@@ -186,30 +173,38 @@ if st.session_state.peran == "siswa":
                 "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
                 "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
                 "☕ Santai & Hangat (Krim / Krem)",
-                "🌙 Istirahat / Malam (Abu-abu Modern)",
-                "🪵 Hangat & Elegan (Coklat Muda)"
+                "🌙 Istirahat / Malam (Abu-abu Modern - Teks Terang)"
             ),
             key="select_warna_siswa"
         )
         if st.button("Terapkan Mood Warna"):
-            if "Putih" in pilihan_warna_siswa:
+            if "Coklat" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#F5EBE6"
+                st.session_state.warna_teks = "#2C221E"
+            elif "Putih" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#FFFFFF"
+                st.session_state.warna_teks = "#1A1A1A"
             elif "Hijau" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#E6F9F0"
+                st.session_state.warna_teks = "#0D3B22"
             elif "Biru" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#E6F2FF"
+                st.session_state.warna_teks = "#0B2E59"
             elif "Kuning" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#FFF9E6"
+                st.session_state.warna_teks = "#4D3800"
             elif "Merah Muda" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#FFE6EE"
+                st.session_state.warna_teks = "#590D22"
             elif "Ungu" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#F3E6FF"
+                st.session_state.warna_teks = "#2E0B59"
             elif "Krim" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#FDFBF7"
+                st.session_state.warna_teks = "#332D25"
             elif "Abu-abu" in pilihan_warna_siswa:
-                st.session_state.warna_bg = "#F5F5F5"
-            elif "Coklat" in pilihan_warna_siswa:
-                st.session_state.warna_bg = "#F5EBE6"
+                st.session_state.warna_bg = "#2B2B2B"  # Background Gelap
+                st.session_state.warna_teks = "#F0F0F0"  # Teks Terang/Putih
             st.rerun()
             
     tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
@@ -312,17 +307,6 @@ if st.session_state.peran == "siswa":
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
 # ==========================================
 elif st.session_state.peran == "admin":
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-color: {st.session_state.warna_bg} !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
     tampilkan_header_logo()
     st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk mengelola aplikasi.")
     
@@ -363,6 +347,7 @@ elif st.session_state.peran == "admin":
         pilihan_tema = st.selectbox(
             "Pilih Tema Warna Mood:",
             (
+                "🪵 Hangat & Elegan (Coklat Muda)",
                 "✨ Netral & Tenang (Putih Klasik)",
                 "🌿 Rileks & Fokus (Hijau Mint Segar)",
                 "🌊 Tenang & Damai (Biru Langit Muda)",
@@ -370,33 +355,41 @@ elif st.session_state.peran == "admin":
                 "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
                 "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
                 "☕ Santai & Hangat (Krim / Krem)",
-                "🌙 Istirahat / Malam (Abu-abu Modern)",
-                "🪵 Hangat & Elegan (Coklat Muda)"
+                "🌙 Istirahat / Malam (Abu-abu Modern - Teks Terang)"
             ),
             key="select_warna_admin"
         )
         
         if st.button("Terapkan Tema Warna"):
-            if "Putih" in pilihan_tema:
+            if "Coklat" in pilihan_tema:
+                st.session_state.warna_bg = "#F5EBE6"
+                st.session_state.warna_teks = "#2C221E"
+            elif "Putih" in pilihan_tema:
                 st.session_state.warna_bg = "#FFFFFF"
+                st.session_state.warna_teks = "#1A1A1A"
             elif "Hijau" in pilihan_tema:
                 st.session_state.warna_bg = "#E6F9F0"
+                st.session_state.warna_teks = "#0D3B22"
             elif "Biru" in pilihan_tema:
                 st.session_state.warna_bg = "#E6F2FF"
+                st.session_state.warna_teks = "#0B2E59"
             elif "Kuning" in pilihan_tema:
                 st.session_state.warna_bg = "#FFF9E6"
+                st.session_state.warna_teks = "#4D3800"
             elif "Merah Muda" in pilihan_tema:
                 st.session_state.warna_bg = "#FFE6EE"
+                st.session_state.warna_teks = "#590D22"
             elif "Ungu" in pilihan_tema:
                 st.session_state.warna_bg = "#F3E6FF"
+                st.session_state.warna_teks = "#2E0B59"
             elif "Krim" in pilihan_tema:
                 st.session_state.warna_bg = "#FDFBF7"
+                st.session_state.warna_teks = "#332D25"
             elif "Abu-abu" in pilihan_tema:
-                st.session_state.warna_bg = "#F5F5F5"
-            elif "Coklat" in pilihan_tema:
-                st.session_state.warna_bg = "#F5EBE6"
+                st.session_state.warna_bg = "#2B2B2B"
+                st.session_state.warna_teks = "#F0F0F0"
                 
-            st.success("Warna latar belakang berhasil diubah!")
+            st.success("Warna latar belakang dan warna tulisan berhasil disesuaikan!")
             st.rerun()
 
 # --- TOMBOL KELUAR (LOGOUT) ---
