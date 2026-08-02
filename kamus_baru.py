@@ -1,6 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+from gtts import gTTS
+import os
 
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
@@ -62,14 +64,26 @@ if st.session_state.peran == "siswa":
                     try:
                         if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
                             perintah = f"Translate this Indonesian text to English. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
+                            bahasa_suara = 'en' # Suara pelafalan bahasa Inggris
                         else:
                             perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
+                            bahasa_suara = 'id' # Suara pelafalan bahasa Indonesia
                             
                         hasil = model_ai.generate_content(perintah)
                         teks_bersih = hasil.text.strip().replace('"', '').replace("'", "")
                         
                         st.success("Hasil Terjemahan:")
                         st.write(teks_bersih)
+                        
+                        # --- FITUR PEMUTAR SUARA PELAFALAN ---
+                        try:
+                            tts = gTTS(text=teks_bersih, lang=bahasa_suara, slow=False)
+                            file_suara = "suara_terjemahan.mp3"
+                            tts.save(file_suara)
+                            st.audio(file_suara, format="audio/mp3")
+                        except Exception as err_suara:
+                            st.warning("Pemutar audio pelafalan sedang memuat.")
+                            
                     except Exception as e:
                         st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
             else:
@@ -85,7 +99,7 @@ if st.session_state.peran == "siswa":
         )
         st.write("---")
         
-        st.info("💡 **Tips:** Foto benda atau objek apa saja di sekitar Anda (contoh: botol, tas, sepatu), lalu AI akan menebak dan menerjemahkannya!")
+        st.info("💡 **Tips:** Foto benda atau objek apa saja di sekitar Anda, lalu AI akan menebak dan menerjemahkannya!")
         
         sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True)
         
@@ -104,14 +118,26 @@ if st.session_state.peran == "siswa":
                     try:
                         if "Inggris" in pilihan_arah_objek:
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in English. No extra explanation or notes."
+                            bahasa_suara_objek = 'en'
                         else:
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
+                            bahasa_suara_objek = 'id'
                             
                         hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
                         objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
                         st.success("Hasil Identifikasi Objek:")
                         st.write(objek_bersih)
+                        
+                        # --- PEMUTAR SUARA UNTUK OBJEK ---
+                        try:
+                            tts_objek = gTTS(text=objek_bersih, lang=bahasa_suara_objek, slow=False)
+                            file_suara_objek = "suara_objek.mp3"
+                            tts_objek.save(file_suara_objek)
+                            st.audio(file_suara_objek, format="audio/mp3")
+                        except Exception as err_suara:
+                            st.warning("Pemutar audio pelafalan sedang memuat.")
+                            
                     except Exception as e:
                         st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
 
