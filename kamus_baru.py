@@ -26,16 +26,10 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI DENGAN ATURAN KETAT ---
+# --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    # Mengunci AI menggunakan System Instruction agar mutlak hanya menerjemahkan
-    pengaturan_ketat = {
-        "system_instruction": "Kamu adalah mesin penerjemah murni. Tugasmu hanya menerjemahkan teks yang diberikan secara langsung. JANGAN PERNAH memberikan penjelasan, JANGAN memberikan catatan, JANGAN memberikan contoh kalimat, dan JANGAN menulis teks pengantar apa pun. Tampilkan HANYA hasil terjemahannya saja."
-    }
-    
-    model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it', **pengaturan_ketat)
+    model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
     model_gambar = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
@@ -66,13 +60,18 @@ if st.session_state.peran == "siswa":
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Terjemahkan ke Bahasa Inggris: {teks_siswa}"
+                        perintah = f"Terjemahkan secara singkat dan langsung ke Bahasa Inggris tanpa penjelasan: {teks_siswa}"
                     else:
-                        perintah = f"Terjemahkan ke Bahasa Indonesia: {teks_siswa}"
+                        perintah = f"Terjemahkan secara singkat dan langsung ke Bahasa Indonesia tanpa penjelasan: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
+                    
+                    # --- PEMOTONG OTOMATIS (Mencegah teks terlalu panjang) ---
+                    # Mengambil baris pertama saja dari jawaban AI agar benar-benar ringkas
+                    teks_bersih = hasil.text.strip().split('\n')[0]
+                    
                     st.success("Hasil Terjemahan:")
-                    st.write(hasil.text)
+                    st.write(teks_bersih)
                 except Exception as e:
                     st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
         else:
