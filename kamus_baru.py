@@ -11,54 +11,42 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
+# --- GAYA CSS GLOBAL UNTUK MENGUBAH BACKGROUND AWAL MENJADI COKLAT ---
+st.markdown(
+    """
+    <style>
+    /* Mengubah background utama aplikasi secara keseluruhan sejak pertama dibuka */
+    .stApp {
+        background-color: #F5EBE6 !important;
+        color: #2C221E;
+    }
+    /* Mengubah warna teks judul, subjudul, dan label teks agar gelap */
+    h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {
+        color: #2C221E !important;
+    }
+    /* Pemaksa warna teks tombol masuk aplikasi menjadi PUTIH */
+    div.stButton > button:first-child p {
+        color: #FFFFFF !important;
+    }
+    div.stButton > button:first-child {
+        background-color: #3D2C24;
+        color: #FFFFFF !important;
+        border-radius: 8px;
+        font-weight: bold;
+        border: none;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #5C4B43;
+        color: #FFFFFF !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- SISTEM LOGIN & GEMBOK APLIKASI ---
 if "peran" not in st.session_state:
     st.session_state.peran = None
-
-# Jika belum login (Gerbang Depan), atur background Coklat Muda dan tombol teks putih mutlak
-if st.session_state.peran is None:
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background-color: #F5EBE6;
-            color: #2C221E;
-        }
-        /* Mengubah warna teks judul, subjudul, dan label teks agar gelap */
-        h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {
-            color: #2C221E !important;
-        }
-        /* Pemaksa warna teks tombol menjadi PUTIH secara mutlak */
-        div.stButton > button:first-child p {
-            color: #FFFFFF !important;
-        }
-        div.stButton > button:first-child {
-            background-color: #3D2C24;
-            color: #FFFFFF !important;
-            border-radius: 8px;
-            font-weight: bold;
-            border: none;
-        }
-        div.stButton > button:first-child:hover {
-            background-color: #5C4B43;
-            color: #FFFFFF !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-else:
-    # Jika sudah login, ikuti warna pilihan (mood) pengguna
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-color: {st.session_state.warna_bg};
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
 
 # --- FUNGSI UNTUK MENAMPILKAN HEADER DUA LOGO DARI FOLDER LOKAL ---
 def tampilkan_header_logo():
@@ -135,6 +123,18 @@ except Exception as e:
 # HALAMAN KHUSUS SISWA (USER)
 # ==========================================
 if st.session_state.peran == "siswa":
+    # Menimpa background jika siswa memilih warna lain di menu mood
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-color: {st.session_state.warna_bg} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
     tampilkan_header_logo()
     st.write("---")
     
@@ -275,6 +275,17 @@ if st.session_state.peran == "siswa":
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
 # ==========================================
 elif st.session_state.peran == "admin":
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-color: {st.session_state.warna_bg} !important;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
     tampilkan_header_logo()
     st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk mengelola aplikasi.")
     
