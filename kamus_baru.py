@@ -5,7 +5,7 @@ from PIL import Image
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
 
-# --- SISTEM LOGIN ---
+# --- SISTEM LOGIN & GEMBOK APLIKASI ---
 if "peran" not in st.session_state:
     st.session_state.peran = None
 
@@ -26,12 +26,14 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- AMBIL DAFTAR MESIN DARI GOOGLE ---
+# --- MENGHUBUNGKAN KE OTAK AI (MENGGUNAKAN MESIN YANG BERHASIL DITEMUKAN) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    mesin_tersedia = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    # Inilah mesin andalan Bapak yang berhasil kita lacak:
+    model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
+    model_gambar = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
 except Exception as e:
-    st.error(f"Koneksi gagal. Laporan: {e}")
+    st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
 
 # ==========================================
@@ -39,30 +41,61 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.info("Mohon bersabar, aplikasi kamus sedang dalam perbaikan oleh Admin (Pak Saiful) agar lebih canggih!")
+    st.write("Selamat datang! Ketik kata atau kalimat yang ingin kamu terjemahkan di bawah ini.")
+    
+    teks_siswa = st.text_area("Teks yang ingin diterjemahkan:", height=100)
+    
+    if st.button("Terjemahkan Teks ✨"):
+        if teks_siswa:
+            with st.spinner("Sedang berpikir..."):
+                try:
+                    perintah = f"Terjemahkan teks berikut ke bahasa Indonesia (jika bahasa Inggris) atau ke bahasa Inggris (jika bahasa Indonesia), dan berikan sedikit penjelasan atau contoh kalimatnya jika perlu. Teks: {teks_siswa}"
+                    hasil = model_teks.generate_content(perintah)
+                    st.success("Hasil Terjemahan:")
+                    st.write(hasil.text)
+                except Exception as e:
+                    st.error(f"Maaf, terjadi sedikit gangguan dari mesin pusat: {e}")
+        else:
+            st.warning("Ketik sesuatu dulu di kotak teks ya!")
 
 # ==========================================
-# HALAMAN KHUSUS ADMIN (MODE PELACAK MESIN)
+# HALAMAN KHUSUS ADMIN (PAK SAIFUL)
 # ==========================================
 elif st.session_state.peran == "admin":
-    st.title("🛠️ Mode Perbaikan Mesin Google")
-    st.warning("Mari kita tes satu per satu mesin di bawah ini sampai menemukan yang diizinkan oleh Google.")
+    st.title("⚙️ Panel Admin - Kamus ALAZKA")
+    st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk memperkaya database kamus.")
     
-    pilihan_mesin = st.selectbox("Pilih Mesin untuk Dites:", mesin_tersedia)
-    kata_uji = st.text_input("Ketik kata untuk dites (misal: school):", "school")
+    tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     
-    if st.button("🚀 Uji Mesin Ini"):
-        with st.spinner(f"Mencoba menerjemahkan menggunakan {pilihan_mesin}..."):
-            try:
-                model_uji = genai.GenerativeModel(pilihan_mesin)
-                hasil = model_uji.generate_content(f"Terjemahkan ke bahasa Indonesia: {kata_uji}")
-                st.success(f"🎉 BERHASIL! Mesin '{pilihan_mesin}' berfungsi sangat baik!")
-                st.write("**Hasil Terjemahan:**", hasil.text)
-                st.info("Tolong kirimkan nama mesin ini ke saya agar aplikasinya bisa kita normalkan kembali!")
-            except Exception as e:
-                st.error(f"❌ MESIN INI DITOLAK. Pesan Google: {e}")
+    with tab1:
+        st.subheader("Tambah Kosakata Manual")
+        kata_baru = st.text_input("Masukkan Kata (Bahasa Inggris/Indonesia):")
+        arti_kata = st.text_input("Masukkan Artinya:")
+        if st.button("Simpan ke Database"):
+            if kata_baru and arti_kata:
+                st.success(f"Berhasil! Kata '{kata_baru}' telah tersimpan.")
+            else:
+                st.warning("Mohon isi kedua kolom di atas.")
+                
+    with tab2:
+        st.subheader("Ekstrak Kosakata dari Gambar/Foto")
+        gambar_unggah = st.file_uploader("Pilih gambar daftar kosakata...", type=["jpg", "jpeg", "png"])
+        
+        if gambar_unggah is not None:
+            gambar_buka = Image.open(gambar_unggah)
+            st.image(gambar_buka, caption="Gambar yang diunggah", use_column_width=True)
+            
+            if st.button("Baca & Ekstrak Teks"):
+                with st.spinner("Membaca teks dari gambar..."):
+                    try:
+                        perintah_gambar = "Keluarkan semua teks yang ada di gambar ini dalam format daftar (list)."
+                        hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka])
+                        st.success("Teks berhasil dibaca!")
+                        st.write(hasil_ekstrak.text)
+                    except Exception as e:
+                        st.error(f"Gagal membaca gambar. Pastikan gambar cukup terang. ({e})")
 
-# --- TOMBOL KELUAR ---
+# --- TOMBOL KELUAR (LOGOUT) ---
 st.write("---")
 if st.button("Keluar (Logout)"):
     st.session_state.peran = None
