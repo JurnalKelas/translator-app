@@ -40,7 +40,7 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Silakan pilih arah terjemahan dan ketik teksmu di bawah ini.")
+    st.write("Selamat datang! Silakan pilih arah terjemahan dan masukkan kata atau kalimat di bawah ini.")
     
     # --- MENU PILIHAN BAHASA ---
     st.write("---")
@@ -51,32 +51,32 @@ if st.session_state.peran == "siswa":
     )
     st.write("---")
     
-    teks_siswa = st.text_area("Teks atau kalimat yang ingin diterjemahkan:", height=100)
+    teks_siswa = st.text_area("Kata atau kalimat yang ingin diterjemahkan:", height=100)
     
-    if st.button("Terjemahkan Teks ✨"):
+    if st.button("Terjemahkan ✨"):
         if teks_siswa:
-            with st.spinner("Sedang menerjemahkan..."):
+            with st.spinner("AI sedang menerjemahkan..."):
                 try:
-                    # Perintah AI diperketat agar HANYA memberikan terjemahan langsung
+                    # Perintah langsung agar AI menerjemahkan kata atau kalimat secara natural
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Terjemahkan teks berikut dari Bahasa Indonesia ke Bahasa Inggris. Berikan hanya hasil terjemahannya saja secara langsung tanpa penjelasan tambahan, tanpa contoh kalimat, dan tanpa basa-basi apa pun. Teks: {teks_siswa}"
+                        perintah = f"Terjemahkan kata atau kalimat berikut dari Bahasa Indonesia ke Bahasa Inggris secara akurat: {teks_siswa}"
                     else:
-                        perintah = f"Terjemahkan teks berikut dari Bahasa Inggris ke Bahasa Indonesia. Berikan hanya hasil terjemahannya saja secara langsung tanpa penjelasan tambahan, tanpa contoh kalimat, dan tanpa basa-basi apa pun. Teks: {teks_siswa}"
+                        perintah = f"Terjemahkan kata atau kalimat berikut dari Bahasa Inggris ke Bahasa Indonesia secara akurat: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
                     st.success("Hasil Terjemahan:")
                     st.write(hasil.text)
                 except Exception as e:
-                    st.error(f"Maaf, terjadi sedikit gangguan dari mesin pusat: {e}")
+                    st.error(f"Maaf, terjadi sedikit gangguan dari mesin AI: {e}")
         else:
-            st.warning("Ketik sesuatu dulu di kotak teks ya!")
+            st.warning("Mohon ketik kata atau kalimat terlebih dahulu di kotak teks.")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
 # ==========================================
 elif st.session_state.peran == "admin":
     st.title("⚙️ Panel Admin - Kamus ALAZKA")
-    st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk memperkaya database kamus.")
+    st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk mengelola aplikasi.")
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     
@@ -99,7 +99,7 @@ elif st.session_state.peran == "admin":
             st.image(gambar_buka, caption="Gambar yang diunggah", use_column_width=True)
             
             if st.button("Baca & Ekstrak Teks"):
-                with st.spinner("Membaca teks dari gambar..."):
+                with st.spinner("Membaca teks dari gambar menggunakan AI..."):
                     try:
                         perintah_gambar = "Keluarkan semua teks yang ada di gambar ini dalam format daftar (list)."
                         hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka])
