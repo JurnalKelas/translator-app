@@ -11,7 +11,7 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
-# --- GAYA CSS GLOBAL (TERMASUK WARNA HIJAU PADA KOTAK TEXT AREA) ---
+# --- GAYA CSS GLOBAL (TERMASUK PEMAKSA WARNA KOTAK TEXT AREA MENJADI HIJAU) ---
 st.markdown(
     """
     <style>
@@ -62,12 +62,20 @@ st.markdown(
         background-color: #5C4B43 !important;
     }
 
-    /* MENGUBAH WARNA LATAR KOTAK TEXT AREA MENJADI HIJAU SEGAR */
-    textarea[data-testid="stTextArea"] {
+    /* PEMAKSAAN MUTLAK KOTAK TEXT AREA MENJADI HIJAU MUDA DENGAN TEKS HIJAU TUA */
+    div[data-testid="stTextArea"] textarea {
         background-color: #E6F4EA !important;
         color: #137333 !important;
         border-radius: 8px !important;
-        border: 1px solid #CEEAD6 !important;
+        border: 1px solid #A8DAB5 !important;
+    }
+    
+    /* Memastikan teks yang diketik di dalam kotak juga berwarna hijau tua jelas */
+    div[data-testid="stTextArea"] textarea:focus {
+        background-color: #E6F4EA !important;
+        color: #137333 !important;
+        border-color: #137333 !important;
+        box-shadow: 0 0 5px rgba(19, 115, 51, 0.3) !important;
     }
     </style>
     """,
