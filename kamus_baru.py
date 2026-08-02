@@ -53,12 +53,32 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# HALAMAN KHUSUS SISWA
+# HALAMAN KHUSUS SISWA (USER)
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
     
+    # --- FITUR GANTI WARNA BACKGROUND UNTUK SISWA ---
+    with st.expander("🎨 Personalisasi Tema Warna (Ganti Background)"):
+        pilihan_warna_siswa = st.selectbox(
+            "Pilih warna latar belakang kesukaanmu:",
+            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)"),
+            key="select_warna_siswa"
+        )
+        if st.button("Terapkan Warna Latar"):
+            if "Putih" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#FFFFFF"
+            elif "Kuning" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#FFF9E6"
+            elif "Biru" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#E6F2FF"
+            elif "Hijau" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#E6F9F0"
+            elif "Abu-abu" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#F5F5F5"
+            st.rerun()
+            
     tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
     
     with tab_teks:
@@ -196,10 +216,10 @@ elif st.session_state.peran == "admin":
         st.subheader("Ubah Warna Latar Belakang (Background) Aplikasi")
         st.write("Pilih warna kesukaan Anda untuk mengubah suasana tampilan aplikasi:")
         
-        # Pilihan tema warna siap pakai
         pilihan_tema = st.selectbox(
             "Pilih Tema Warna Cepat:",
-            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)")
+            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)"),
+            key="select_warna_admin"
         )
         
         if st.button("Terapkan Tema Warna"):
@@ -214,7 +234,7 @@ elif st.session_state.peran == "admin":
             elif "Abu-abu" in pilihan_tema:
                 st.session_state.warna_bg = "#F5F5F5"
                 
-            st.success("Warna latar belakang berhasil diubah! Muat ulang halaman jika diperlukan.")
+            st.success("Warna latar belakang berhasil diubah!")
             st.rerun()
 
 # --- TOMBOL KELUAR (LOGOUT) ---
