@@ -59,22 +59,37 @@ if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
     
-    # --- FITUR GANTI WARNA BACKGROUND UNTUK SISWA ---
-    with st.expander("🎨 Personalisasi Tema Warna (Ganti Background)"):
+    # --- FITUR GANTI WARNA BACKGROUND BERDASARKAN MOOD ---
+    with st.expander("🎨 Pilih Warna Latar Berdasarkan Mood Kamu"):
         pilihan_warna_siswa = st.selectbox(
-            "Pilih warna latar belakang kesukaanmu:",
-            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)"),
+            "Bagaimana suasana hatimu hari ini?",
+            (
+                "✨ Netral & Tenang (Putih Klasik)",
+                "🌿 Rileks & Fokus (Hijau Mint Segar)",
+                "🌊 Tenang & Damai (Biru Langit Muda)",
+                "☀️ Ceria & Bersemangat (Kuning Pastel Lembut)",
+                "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
+                "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
+                "☕ Santai & Hangat (Krim / Krem)",
+                "🌙 Istirahat / Malam (Abu-abu Modern)"
+            ),
             key="select_warna_siswa"
         )
-        if st.button("Terapkan Warna Latar"):
+        if st.button("Terapkan Mood Warna"):
             if "Putih" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#FFFFFF"
-            elif "Kuning" in pilihan_warna_siswa:
-                st.session_state.warna_bg = "#FFF9E6"
-            elif "Biru" in pilihan_warna_siswa:
-                st.session_state.warna_bg = "#E6F2FF"
             elif "Hijau" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#E6F9F0"
+            elif "Biru" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#E6F2FF"
+            elif "Kuning" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#FFF9E6"
+            elif "Merah Muda" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#FFE6EE"
+            elif "Ungu" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#F3E6FF"
+            elif "Krim" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#FDFBF7"
             elif "Abu-abu" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#F5F5F5"
             st.rerun()
@@ -214,23 +229,38 @@ elif st.session_state.peran == "admin":
                         
     with tab3:
         st.subheader("Ubah Warna Latar Belakang (Background) Aplikasi")
-        st.write("Pilih warna kesukaan Anda untuk mengubah suasana tampilan aplikasi:")
+        st.write("Pilih warna suasana hati untuk latar belakang aplikasi:")
         
         pilihan_tema = st.selectbox(
-            "Pilih Tema Warna Cepat:",
-            ("Putih Klasik (#FFFFFF)", "Kuning Pastel Lembut (#FFF9E6)", "Biru Langit Muda (#E6F2FF)", "Hijau Mint Segar (#E6F9F0)", "Abu-abu Modern (#F5F5F5)"),
+            "Pilih Tema Warna Mood:",
+            (
+                "✨ Netral & Tenang (Putih Klasik)",
+                "🌿 Rileks & Fokus (Hijau Mint Segar)",
+                "🌊 Tenang & Damai (Biru Langit Muda)",
+                "☀️ Ceria & Bersemangat (Kuning Pastel Lembut)",
+                "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
+                "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
+                "☕ Santai & Hangat (Krim / Krem)",
+                "🌙 Istirahat / Malam (Abu-abu Modern)"
+            ),
             key="select_warna_admin"
         )
         
         if st.button("Terapkan Tema Warna"):
             if "Putih" in pilihan_tema:
                 st.session_state.warna_bg = "#FFFFFF"
-            elif "Kuning" in pilihan_tema:
-                st.session_state.warna_bg = "#FFF9E6"
-            elif "Biru" in pilihan_tema:
-                st.session_state.warna_bg = "#E6F2FF"
             elif "Hijau" in pilihan_tema:
                 st.session_state.warna_bg = "#E6F9F0"
+            elif "Biru" in pilihan_tema:
+                st.session_state.warna_bg = "#E6F2FF"
+            elif "Kuning" in pilihan_tema:
+                st.session_state.warna_bg = "#FFF9E6"
+            elif "Merah Muda" in pilihan_tema:
+                st.session_state.warna_bg = "#FFE6EE"
+            elif "Ungu" in pilihan_tema:
+                st.session_state.warna_bg = "#F3E6FF"
+            elif "Krim" in pilihan_tema:
+                st.session_state.warna_bg = "#FDFBF7"
             elif "Abu-abu" in pilihan_tema:
                 st.session_state.warna_bg = "#F5F5F5"
                 
