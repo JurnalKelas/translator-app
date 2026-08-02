@@ -23,13 +23,37 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- FUNGSI UNTUK MENAMPILKAN HEADER DUA LOGO DARI FOLDER LOKAL ---
+def tampilkan_header_logo():
+    col1, col2, col3 = st.columns([1, 3, 1])
+    
+    with col1:
+        try:
+            # Menggunakan logo1.png di sebelah kiri
+            logo1 = Image.open("logo1.png")
+            st.image(logo1, width=70)
+        except:
+            st.write("Logo 1")
+            
+    with col2:
+        st.markdown("<h2 style='text-align: center; margin: 0;'>Kamus Pintar ALAZKA</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: gray; margin: 0;'>Smart English Dictionary & Object Detector</p>", unsafe_allow_html=True)
+        
+    with col3:
+        try:
+            # Menggunakan logo2.png di sebelah kanan
+            logo2 = Image.open("logo2.png")
+            st.image(logo2, width=70)
+        except:
+            st.write("Logo 2")
+
 # --- SISTEM LOGIN & GEMBOK APLIKASI ---
 if "peran" not in st.session_state:
     st.session_state.peran = None
 
 if st.session_state.peran is None:
-    st.markdown("<h1 style='text-align: center;'>🔒 Gerbang Kamus ALAZKA</h1>", unsafe_allow_html=True)
-    st.markdown("<h4 style='text-align: center; color: #4CAF50;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
+    tampilkan_header_logo()
+    st.markdown("<h4 style='text-align: center; color: #4CAF50; margin-top: 15px;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
     st.write("---")
     
     # --- PANDUAN PENGGUNAAN DI HALAMAN DEPAN ---
@@ -79,8 +103,8 @@ except Exception as e:
 # HALAMAN KHUSUS SISWA (USER)
 # ==========================================
 if st.session_state.peran == "siswa":
-    st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
+    tampilkan_header_logo()
+    st.write("---")
     
     with st.expander("🎨 Pilih Warna Latar Berdasarkan Mood Kamu"):
         pilihan_warna_siswa = st.selectbox(
@@ -216,7 +240,7 @@ if st.session_state.peran == "siswa":
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
 # ==========================================
 elif st.session_state.peran == "admin":
-    st.title("⚙️ Panel Admin - Kamus ALAZKA")
+    tampilkan_header_logo()
     st.info("Selamat bekerja, Pak Saiful! Gunakan menu di bawah ini untuk mengelola aplikasi.")
     
     tab1, tab2, tab3 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar", "🎨 Pengaturan Tema Warna"])
