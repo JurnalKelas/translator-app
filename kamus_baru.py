@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import streamlit.components.v1 as components
 
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
@@ -40,7 +41,7 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Pilih mode terjemahan, lalu ketik atau gunakan suara (ikon mikrofon di keyboard HP) untuk menerjemahkan.")
+    st.write("Selamat datang! Pilih mode terjemahan, lalu ketik atau gunakan tombol mikrofon di layar.")
     
     # --- MENU PILIHAN BAHASA ---
     st.write("---")
@@ -51,16 +52,59 @@ if st.session_state.peran == "siswa":
     )
     st.write("---")
     
-    teks_siswa = st.text_area("Ketik kata/kalimat atau ketuk ikon mikrofon di keyboard Anda:", height=100)
+    # --- TOMBOL MIKROFON KHUSUS DI LAYAR ---
+    st.markdown("### 🎤 Input Suara Langsung")
     
+    # Komponen HTML & JavaScript untuk tombol rekam suara di layar
+    komponen_suara = """
+    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+        <button onclick="mulaiRekam()" style="background-color: #ff4b4b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">🎙️ Klik untuk Berbicara</button>
+        <span id="statusSuara" style="font-style: italic; color: gray;">Tekan tombol lalu ucapkan kata/kalimat...</span>
+    </div>
+    <textarea id="hasilSuara" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" placeholder="Hasil suara akan muncul di sini secara otomatis..."></textarea>
+    
+    <script>
+    function mulaiRekam() {
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'id-ID'; // Mengatur bahasa Indonesia, bisa mendengarkan Inggris juga
+        recognition.interimResults = false;
+        
+        document.getElementById("statusSuara").innerText = "Mendengarkan... Silakan bicara sekarang!";
+        
+        recognition.onresult = function(event) {
+            const hasilKata = event.results[0][0].transcript;
+            document.getElementById("hasilSuara").value = hasilKata;
+            document.getElementById("statusSuara").innerText = "Suara berhasil direkam!";
+            // Memicu sinkronisasi ke Streamlit
+            const textarea = document.getElementById("hasilSuara");
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+        
+        recognition.onerror = function(event) {
+            document.getElementById("statusSuara").innerText = "Gagal mendeteksi suara. Coba lagi.";
+        };
+        
+        recognition.start();
+    }
+    </script>
+    """
+    components.html(komponen_suara, height=140)
+    
+    st.write("Atau ketik manual di bawah ini:")
+    teks_siswa = st.text_area("Ketik kata atau kalimat:", height=80)
+    
+    # Tombol Eksekusi Terjemahan
     if st.button("Terjemahkan ✨"):
-        if teks_siswa:
+        # Mengambil teks dari input (bisa dari hasil suara atau ketikan manual)
+        target_teks = teks_siswa if teks_siswa else ""
+        
+        if target_teks:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {target_teks}"
                     else:
-                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {target_teks}"
                         
                     hasil = model_teks.generate_content(perintah)
                     st.success("Hasil Terjemahan:")
@@ -68,7 +112,7 @@ if st.session_state.peran == "siswa":
                 except Exception as e:
                     st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
         else:
-            st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
+            st.warning("Mohon ucapkan sesuatu lewat tombol mikrofon atau ketik kata terlebih dahulu.")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
