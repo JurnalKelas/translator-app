@@ -11,17 +11,34 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
-# --- MENERAPKAN WARNA LATAR BELAKANG (BACKGROUND) ---
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-color: {st.session_state.warna_bg};
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# --- SISTEM LOGIN & GEMBOK APLIKASI ---
+if "peran" not in st.session_state:
+    st.session_state.peran = None
+
+# Jika belum login (Gerbang Depan), atur background khusus Coklat Muda (#F5EBE6 atau #FAF0E6)
+if st.session_state.peran is None:
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #F5EBE6;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    # Jika sudah login, ikuti warna pilihan (mood) pengguna
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-color: {st.session_state.warna_bg};
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # --- FUNGSI UNTUK MENAMPILKAN HEADER DUA LOGO DARI FOLDER LOKAL ---
 def tampilkan_header_logo():
@@ -29,7 +46,6 @@ def tampilkan_header_logo():
     
     with col1:
         try:
-            # Menggunakan logo1.png di sebelah kiri
             logo1 = Image.open("logo1.png")
             st.image(logo1, width=70)
         except:
@@ -41,16 +57,12 @@ def tampilkan_header_logo():
         
     with col3:
         try:
-            # Menggunakan logo2.png di sebelah kanan
             logo2 = Image.open("logo2.png")
             st.image(logo2, width=70)
         except:
             st.write("Logo 2")
 
-# --- SISTEM LOGIN & GEMBOK APLIKASI ---
-if "peran" not in st.session_state:
-    st.session_state.peran = None
-
+# --- HALAMAN GERBANG DEPAN (LOGIN) ---
 if st.session_state.peran is None:
     tampilkan_header_logo()
     st.markdown("<h4 style='text-align: center; color: #4CAF50; margin-top: 15px;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
@@ -117,7 +129,8 @@ if st.session_state.peran == "siswa":
                 "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
                 "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
                 "☕ Santai & Hangat (Krim / Krem)",
-                "🌙 Istirahat / Malam (Abu-abu Modern)"
+                "🌙 Istirahat / Malam (Abu-abu Modern)",
+                "🪵 Hangat & Elegan (Coklat Muda)"
             ),
             key="select_warna_siswa"
         )
@@ -138,6 +151,8 @@ if st.session_state.peran == "siswa":
                 st.session_state.warna_bg = "#FDFBF7"
             elif "Abu-abu" in pilihan_warna_siswa:
                 st.session_state.warna_bg = "#F5F5F5"
+            elif "Coklat" in pilihan_warna_siswa:
+                st.session_state.warna_bg = "#F5EBE6"
             st.rerun()
             
     tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
@@ -287,7 +302,8 @@ elif st.session_state.peran == "admin":
                 "🌸 Kreatif & Hangat (Merah Muda / Pink Soft)",
                 "🔮 Nyaman & Misterius (Ungu Lavender Soft)",
                 "☕ Santai & Hangat (Krim / Krem)",
-                "🌙 Istirahat / Malam (Abu-abu Modern)"
+                "🌙 Istirahat / Malam (Abu-abu Modern)",
+                "🪵 Hangat & Elegan (Coklat Muda)"
             ),
             key="select_warna_admin"
         )
@@ -309,6 +325,8 @@ elif st.session_state.peran == "admin":
                 st.session_state.warna_bg = "#FDFBF7"
             elif "Abu-abu" in pilihan_tema:
                 st.session_state.warna_bg = "#F5F5F5"
+            elif "Coklat" in pilihan_tema:
+                st.session_state.warna_bg = "#F5EBE6"
                 
             st.success("Warna latar belakang berhasil diubah!")
             st.rerun()
