@@ -41,7 +41,7 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Pilih mode terjemahan, lalu ketik atau gunakan tombol mikrofon di layar.")
+    st.write("Selamat datang! Pilih mode terjemahan, lalu gunakan tombol suara atau ketik manual.")
     
     # --- MENU PILIHAN BAHASA ---
     st.write("---")
@@ -52,59 +52,57 @@ if st.session_state.peran == "siswa":
     )
     st.write("---")
     
-    # --- TOMBOL MIKROFON KHUSUS DI LAYAR ---
-    st.markdown("### 🎤 Input Suara Langsung")
+    # Kotak teks utama tempat siswa mengetik atau melihat hasil suara
+    teks_siswa = st.text_area("Ketik kata/kalimat di sini (atau gunakan tombol suara di bawah):", height=100)
     
-    # Komponen HTML & JavaScript untuk tombol rekam suara di layar
+    # --- TOMBOL MIKROFON INTERAKTIF DI LAYAR ---
     komponen_suara = """
-    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;">
+        <p style="margin-bottom: 10px; font-weight: bold; color: #31333F;">Atau Ucapkan dengan Suara:</p>
         <button onclick="mulaiRekam()" style="background-color: #ff4b4b; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">🎙️ Klik untuk Berbicara</button>
-        <span id="statusSuara" style="font-style: italic; color: gray;">Tekan tombol lalu ucapkan kata/kalimat...</span>
+        <p id="statusSuara" style="font-style: italic; color: gray; margin-top: 8px; font-size: 14px;">Tekan tombol lalu ucapkan kata/kalimat...</p>
     </div>
-    <textarea id="hasilSuara" rows="3" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;" placeholder="Hasil suara akan muncul di sini secara otomatis..."></textarea>
     
     <script>
     function mulaiRekam() {
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'id-ID'; // Mengatur bahasa Indonesia, bisa mendengarkan Inggris juga
+        recognition.lang = 'id-ID';
         recognition.interimResults = false;
         
-        document.getElementById("statusSuara").innerText = "Mendengarkan... Silakan bicara sekarang!";
+        document.getElementById("statusSuara.innerText = "Mendengarkan... Silakan bicara sekarang!";
         
         recognition.onresult = function(event) {
             const hasilKata = event.results[0][0].transcript;
-            document.getElementById("hasilSuara").value = hasilKata;
-            document.getElementById("statusSuara").innerText = "Suara berhasil direkam!";
-            // Memicu sinkronisasi ke Streamlit
-            const textarea = document.getElementById("hasilSuara");
-            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            document.getElementById("statusSuara").innerText = "Berhasil merekam: \\"" + hasilKata + "\\"";
+            
+            // Mencari elemen textarea Streamlit secara otomatis dan memasukkan teksnya
+            const textareas = window.parent.document.querySelectorAll("textarea");
+            if (textareas.length > 0) {
+                const targetTextarea = textareas[0];
+                targetTextarea.value = hasilKata;
+                targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         };
         
         recognition.onerror = function(event) {
-            document.getElementById("statusSuara").innerText = "Gagal mendeteksi suara. Coba lagi.";
+            document.getElementById("statusSuara").innerText = "Gagal mendeteksi suara. Pastikan izin mikrofon aktif.";
         };
         
         recognition.start();
     }
     </script>
     """
-    components.html(komponen_suara, height=140)
-    
-    st.write("Atau ketik manual di bawah ini:")
-    teks_siswa = st.text_area("Ketik kata atau kalimat:", height=80)
+    components.html(komponen_suara, height=160)
     
     # Tombol Eksekusi Terjemahan
     if st.button("Terjemahkan ✨"):
-        # Mengambil teks dari input (bisa dari hasil suara atau ketikan manual)
-        target_teks = teks_siswa if teks_siswa else ""
-        
-        if target_teks:
+        if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {target_teks}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
                     else:
-                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {target_teks}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
                     st.success("Hasil Terjemahan:")
@@ -112,7 +110,7 @@ if st.session_state.peran == "siswa":
                 except Exception as e:
                     st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
         else:
-            st.warning("Mohon ucapkan sesuatu lewat tombol mikrofon atau ketik kata terlebih dahulu.")
+            st.warning("Mohon masukkan kata atau kalimat terlebih dahulu (ketik atau gunakan tombol mikrofon).")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
