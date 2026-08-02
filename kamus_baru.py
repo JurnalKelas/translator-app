@@ -26,10 +26,9 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI (MENGGUNAKAN MESIN YANG BERHASIL DITEMUKAN) ---
+# --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Inilah mesin andalan Bapak yang berhasil kita lacak:
     model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
     model_gambar = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
 except Exception as e:
@@ -41,15 +40,29 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Ketik kata atau kalimat yang ingin kamu terjemahkan di bawah ini.")
+    st.write("Selamat datang! Silakan pilih arah terjemahan dan ketik teksmu di bawah ini.")
     
-    teks_siswa = st.text_area("Teks yang ingin diterjemahkan:", height=100)
+    # --- MENU PILIHAN BAHASA (Fitur Baru) ---
+    st.write("---")
+    pilihan_bahasa = st.radio(
+        "Pilih mode terjemahan:",
+        ("🇮🇩 Indonesia ➡️ 🇬🇧 Inggris", "🇬🇧 Inggris ➡️ 🇮🇩 Indonesia"),
+        horizontal=True
+    )
+    st.write("---")
+    
+    teks_siswa = st.text_area("Teks atau kalimat yang ingin diterjemahkan:", height=100)
     
     if st.button("Terjemahkan Teks ✨"):
         if teks_siswa:
-            with st.spinner("Sedang berpikir..."):
+            with st.spinner("Sedang menerjemahkan..."):
                 try:
-                    perintah = f"Terjemahkan teks berikut ke bahasa Indonesia (jika bahasa Inggris) atau ke bahasa Inggris (jika bahasa Indonesia), dan berikan sedikit penjelasan atau contoh kalimatnya jika perlu. Teks: {teks_siswa}"
+                    # Menyesuaikan perintah ke AI berdasarkan pilihan siswa
+                    if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
+                        perintah = f"Terjemahkan teks berikut dari Bahasa Indonesia ke Bahasa Inggris. Berikan juga sedikit penjelasan atau contoh penggunaan kalimatnya agar mudah dipahami siswa SMP. Teks: {teks_siswa}"
+                    else:
+                        perintah = f"Terjemahkan teks berikut dari Bahasa Inggris ke Bahasa Indonesia. Berikan juga sedikit penjelasan atau contoh penggunaan kalimatnya agar mudah dipahami siswa SMP. Teks: {teks_siswa}"
+                        
                     hasil = model_teks.generate_content(perintah)
                     st.success("Hasil Terjemahan:")
                     st.write(hasil.text)
