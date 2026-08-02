@@ -11,7 +11,7 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
-# --- GAYA CSS GLOBAL (TERMASUK MEMPERJELAS TEKS TOMBOL KAMERA) ---
+# --- GAYA CSS GLOBAL (TERMASUK TOMBOL KAMERA TEKS PUTIH) ---
 st.markdown(
     """
     <style>
@@ -39,15 +39,18 @@ st.markdown(
         background-color: #5C4B43;
         color: #FFFFFF !important;
     }
-    /* MEMPERJELAS TEKS PADA TOMBOL KAMERA (Take Photo, Clear Photo, dll) */
+    /* MENGUBAH TOMBOL KAMERA (Take Photo / Clear Photo) MENJADI GELAP DENGAN TEKS PUTIH */
     button[kind="secondary"] {
-        color: #2C221E !important;
-        background-color: #E6D5CC !important;
-        border: 1px solid #B09B91 !important;
+        background-color: #3D2C24 !important;
+        border: none !important;
+        border-radius: 8px !important;
     }
-    button[kind="secondary"] p {
-        color: #2C221E !important;
+    button[kind="secondary"] p, button[kind="secondary"] span {
+        color: #FFFFFF !important;
         font-weight: bold !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #5C4B43 !important;
     }
     </style>
     """,
