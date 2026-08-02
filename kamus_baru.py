@@ -59,16 +59,16 @@ if st.session_state.peran == "siswa":
         if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
-                    # Perintah diperjelas menggunakan bahasa Inggris agar AI tidak salah paham
+                    # Menggunakan batas kutip agar AI tahu persis bagian mana yang harus diterjemahkan
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Translate this Indonesian text to English. Output only the translation without any explanation: {teks_siswa}"
+                        perintah = f"Translate the text inside the quotes from Indonesian to English. Output only the translation, no extra words: \"{teks_siswa}\""
                     else:
-                        perintah = f"Translate this English text to Indonesian. Output only the translation without any explanation: {teks_siswa}"
+                        perintah = f"Translate the text inside the quotes from English to Indonesian. Output only the translation, no extra words: \"{teks_siswa}\""
                         
                     hasil = model_teks.generate_content(perintah)
                     
-                    # Pembersih baris agar ringkas
-                    teks_bersih = hasil.text.strip().split('\n')[0]
+                    # Membersihkan hasil agar bersih dari tanda kutip sisa jika ada
+                    teks_bersih = hasil.text.strip().replace('"', '')
                     
                     st.success("Hasil Terjemahan:")
                     st.write(teks_bersih)
