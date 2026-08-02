@@ -26,17 +26,13 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI ---
+# --- MENGHUBUNGKAN KE OTAK AI TERBARU ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Konfigurasi pembatas agar AI dilarang menulis apa pun selain hasil terjemahan
-    konfigurasi_ai = {
-        "temperature": 0.0,
-    }
-    
-    model_teks = genai.GenerativeModel('models/gemma-4-26b-a4b-it', generation_config=konfigurasi_ai)
-    model_gambar = genai.GenerativeModel('models/gemma-4-26b-a4b-it')
+    # Menggunakan model Gemini 3.6 Flash yang sangat cepat dan akurat untuk terjemahan
+    model_teks = genai.GenerativeModel('gemini-3.6-flash')
+    model_gambar = genai.GenerativeModel('gemini-3.6-flash')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -65,16 +61,16 @@ if st.session_state.peran == "siswa":
         if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
-                    # Perintah mutlak tanpa basa-basi
+                    # Instruksi mutlak agar AI hanya memberikan hasil terjemahan murni
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Give only the English translation of this word or sentence, nothing else: {teks_siswa}"
+                        perintah = f"Translate this Indonesian text to English. Provide ONLY the direct translation without any explanation, notes, or extra words: {teks_siswa}"
                     else:
-                        perintah = f"Give only the Indonesian translation of this word or sentence, nothing else: {teks_siswa}"
+                        perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation, notes, or extra words: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
                     
-                    # Mengambil baris pertama saja dan membersihkan tanda kutip jika ada
-                    teks_bersih = hasil.text.strip().split('\n')[0].replace('"', '').replace("'", "")
+                    # Pembersih teks agar benar-benar ringkas
+                    teks_bersih = hasil.text.strip().replace('"', '').replace("'", "")
                     
                     st.success("Hasil Terjemahan:")
                     st.write(teks_bersih)
