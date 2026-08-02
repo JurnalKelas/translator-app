@@ -29,7 +29,8 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    # Menggunakan model standar yang stabil untuk teks dan gambar
+    model_ai = genai.GenerativeModel('gemini-3.6-flash')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -88,7 +89,6 @@ if st.session_state.peran == "siswa":
         
         st.info("💡 **Tips:** Anda bisa langsung memotret menggunakan kamera HP atau mengunggah foto teks dari galeri.")
         
-        # Fitur untuk mengambil foto langsung atau unggah file gambar
         sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True)
         
         gambar_unggah = None
@@ -105,9 +105,9 @@ if st.session_state.peran == "siswa":
                 with st.spinner("AI sedang membaca dan menerjemahkan foto..."):
                     try:
                         if "Indonesia" in pilihan_bahasa_kamera:
-                            perintah_foto = "Baca teks dalam gambar ini, lalu terjemahkan ke Bahasa Inggris secara langsung. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan."
+                            perintah_foto = "Read the text in this image and translate it to English. Provide ONLY the direct translation without any explanation or notes."
                         else:
-                            perintah_foto = "Baca teks dalam gambar ini, lalu terjemahkan ke Bahasa Indonesia secara langsung. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan."
+                            perintah_foto = "Read the text in this image and translate it to Indonesian. Provide ONLY the direct translation without any explanation or notes."
                             
                         hasil_foto = model_ai.generate_content([perintah_foto, gambar_buka])
                         foto_bersih = hasil_foto.text.strip().replace('"', '').replace("'", "")
