@@ -57,11 +57,11 @@ if st.session_state.peran == "siswa":
         if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
-                    # Perintah langsung agar AI menerjemahkan kata atau kalimat secara natural
+                    # Perintah diperketat agar AI dilarang keras menulis penjelasan tambahan
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Terjemahkan kata atau kalimat berikut dari Bahasa Indonesia ke Bahasa Inggris secara akurat: {teks_siswa}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja. Jangan tulis penjelasan, jangan tulis catatan, dan jangan tulis kalimat pengantar. Teks: {teks_siswa}"
                     else:
-                        perintah = f"Terjemahkan kata atau kalimat berikut dari Bahasa Inggris ke Bahasa Indonesia secara akurat: {teks_siswa}"
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja. Jangan tulis penjelasan, jangan tulis catatan, dan jangan tulis kalimat pengantar. Teks: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
                     st.success("Hasil Terjemahan:")
