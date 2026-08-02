@@ -3,6 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 from gtts import gTTS
 import os
+import streamlit.components.v1 as components
 
 # --- KONFIGURASI HALAMAN UTAMA ---
 st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
@@ -45,7 +46,7 @@ st.markdown(
         color: #FFFFFF !important;
     }}
     
-    /* Tombol Kamera (Take Photo / Clear Photo) */
+    /* GAYA UTAMA TOMBOL KAMERA (Take Photo / Clear Photo) */
     button[data-testid="baseButton-secondary"], 
     div[data-testid="stCameraInput"] button,
     .stCameraInput button {{
@@ -77,6 +78,28 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True
+)
+
+# --- JAVASCRIPT PEMAKSA WARNA TEKS TOMBOL KAMERA MENJADI PUTIH ---
+components.html(
+    """
+    <script>
+    const observer = new MutationObserver(() => {
+        const buttons = window.parent.document.querySelectorAll('button[data-testid="baseButton-secondary"], .stCameraInput button');
+        buttons.forEach(btn => {
+            btn.style.backgroundColor = "#3D2C24";
+            btn.style.color = "#FFFFFF";
+            const elements = btn.querySelectorAll('*');
+            elements.forEach(el => {
+                el.style.color = "#FFFFFF";
+                el.style.fill = "#FFFFFF";
+            });
+        });
+    });
+    observer.observe(window.parent.document.body, { childList: true, subtree: true });
+    </script>
+    """,
+    height=0,
 )
 
 # --- SISTEM LOGIN & GEMBOK APLIKASI ---
