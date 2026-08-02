@@ -59,15 +59,15 @@ if st.session_state.peran == "siswa":
         if teks_siswa:
             with st.spinner("AI sedang menerjemahkan..."):
                 try:
+                    # Perintah diperjelas menggunakan bahasa Inggris agar AI tidak salah paham
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah = f"Terjemahkan secara singkat dan langsung ke Bahasa Inggris tanpa penjelasan: {teks_siswa}"
+                        perintah = f"Translate this Indonesian text to English. Output only the translation without any explanation: {teks_siswa}"
                     else:
-                        perintah = f"Terjemahkan secara singkat dan langsung ke Bahasa Indonesia tanpa penjelasan: {teks_siswa}"
+                        perintah = f"Translate this English text to Indonesian. Output only the translation without any explanation: {teks_siswa}"
                         
                     hasil = model_teks.generate_content(perintah)
                     
-                    # --- PEMOTONG OTOMATIS (Mencegah teks terlalu panjang) ---
-                    # Mengambil baris pertama saja dari jawaban AI agar benar-benar ringkas
+                    # Pembersih baris agar ringkas
                     teks_bersih = hasil.text.strip().split('\n')[0]
                     
                     st.success("Hasil Terjemahan:")
@@ -107,7 +107,7 @@ elif st.session_state.peran == "admin":
             if st.button("Baca & Ekstrak Teks"):
                 with st.spinner("Membaca teks dari gambar menggunakan AI..."):
                     try:
-                        perintah_gambar = "Keluarkan semua teks yang ada di gambar ini dalam format daftar (list)."
+                        perintah_gambar = "Extract all text from this image as a list."
                         hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka])
                         st.success("Teks berhasil dibaca!")
                         st.write(hasil_ekstrak.text)
