@@ -41,7 +41,7 @@ if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     st.write("Selamat datang! Pilih menu terjemahan di bawah ini.")
     
-    tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Terjemah dari Kamera / Foto"])
+    tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
     
     with tab_teks:
         st.write("---")
@@ -77,44 +77,43 @@ if st.session_state.peran == "siswa":
 
     with tab_kamera:
         st.write("---")
-        pilihan_bahasa_kamera = st.radio(
-            "Pilih arah terjemahan foto:",
-            ("🇮🇩 Gambar Teks Indonesia ➡️ 🇬🇧 Inggris", "🇬🇧 Gambar Teks Inggris ➡️ 🇮🇩 Indonesia"),
+        pilihan_arah_objek = st.radio(
+            "Pilih hasil terjemahan nama objek:",
+            ("🇬🇧 Nama Objek dalam Bahasa Inggris", "🇮🇩 Nama Objek dalam Bahasa Indonesia"),
             horizontal=True,
-            key="radio_kamera"
+            key="radio_objek"
         )
         st.write("---")
         
-        st.info("💡 **Tips:** Pastikan foto teks terlihat jelas, tidak buram, dan pencahayaan cukup terang agar akurat.")
+        st.info("💡 **Tips:** Foto benda atau objek apa saja di sekitar Anda (contoh: botol, tas, sepatu), lalu AI akan menebak dan menerjemahkannya!")
         
         sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True)
         
         gambar_unggah = None
         if sumber_gambar == "📸 Ambil Foto Langsung (Kamera)":
-            gambar_unggah = st.camera_input("Ambil foto teks yang ingin diterjemahkan")
+            gambar_unggah = st.camera_input("Ambil foto objek yang ingin dikenali")
         else:
-            gambar_unggah = st.file_uploader("Pilih file foto...", type=["jpg", "jpeg", "png"])
+            gambar_unggah = st.file_uploader("Pilih file foto objek...", type=["jpg", "jpeg", "png"])
             
         if gambar_unggah is not None:
             gambar_buka = Image.open(gambar_unggah)
-            st.image(gambar_buka, caption="Foto yang akan diterjemahkan", use_column_width=True)
+            st.image(gambar_buka, caption="Objek yang dianalisis", use_column_width=True)
             
-            if st.button("Terjemahkan Foto ✨"):
-                with st.spinner("AI sedang membaca dan menerjemahkan foto secara akurat..."):
+            if st.button("Identifikasi & Terjemahkan Objek ✨"):
+                with st.spinner("AI sedang mengenali benda di foto..."):
                     try:
-                        # Perintah diperketat agar AI fokus mendeteksi teks dengan presisi tinggi
-                        if "Indonesia" in pilihan_bahasa_kamera:
-                            perintah_foto = "Look closely at this image, identify the exact Indonesian text written on it, and provide ONLY its accurate English translation without any explanation, notes, or extra formatting."
+                        if "Inggris" in pilihan_arah_objek:
+                            perintah_objek = "Identify the main object in this image and provide ONLY its name in English. No extra explanation or notes."
                         else:
-                            perintah_foto = "Look closely at this image, identify the exact English text written on it, and provide ONLY its accurate Indonesian translation without any explanation, notes, or extra formatting."
+                            perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
                             
-                        hasil_foto = model_ai.generate_content([perintah_foto, gambar_buka])
-                        foto_bersih = hasil_foto.text.strip().replace('"', '').replace("'", "")
+                        hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
+                        objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
-                        st.success("Hasil Terjemahan Foto:")
-                        st.write(foto_bersih)
+                        st.success("Hasil Identifikasi Objek:")
+                        st.write(objek_bersih)
                     except Exception as e:
-                        st.error(f"Gagal memproses foto. Pastikan pencahayaan cukup terang. ({e})")
+                        st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
