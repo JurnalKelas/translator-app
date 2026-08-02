@@ -11,7 +11,7 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 if "warna_bg" not in st.session_state:
     st.session_state.warna_bg = "#FFFFFF" # Default Putih Bersih
 
-# --- GAYA CSS GLOBAL (DENGAN PEMAKSA WARNA TOMBOL KAMERA MUTLAK) ---
+# --- GAYA CSS GLOBAL (TERMASUK WARNA HIJAU PADA KOTAK TEXT AREA) ---
 st.markdown(
     """
     <style>
@@ -60,6 +60,14 @@ st.markdown(
     button[data-testid="baseButton-secondary"]:hover,
     div[data-testid="stCameraInput"] button:hover {
         background-color: #5C4B43 !important;
+    }
+
+    /* MENGUBAH WARNA LATAR KOTAK TEXT AREA MENJADI HIJAU SEGAR */
+    textarea[data-testid="stTextArea"] {
+        background-color: #E6F4EA !important;
+        color: #137333 !important;
+        border-radius: 8px !important;
+        border: 1px solid #CEEAD6 !important;
     }
     </style>
     """,
