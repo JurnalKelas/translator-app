@@ -40,7 +40,7 @@ except Exception as e:
 # ==========================================
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
-    st.write("Selamat datang! Pilih mode terjemahan, lalu ketik atau rekam suara Anda di bawah ini.")
+    st.write("Selamat datang! Pilih mode terjemahan, lalu ketik atau gunakan suara (ikon mikrofon di keyboard HP) untuk menerjemahkan.")
     
     # --- MENU PILIHAN BAHASA ---
     st.write("---")
@@ -51,57 +51,24 @@ if st.session_state.peran == "siswa":
     )
     st.write("---")
     
-    # Pilihan Input: Teks atau Suara
-    metode_input = st.radio("Pilih cara memasukkan kata/kalimat:", ("✍️ Ketik Teks", "🎤 Rekam Suara"), horizontal=True)
+    teks_siswa = st.text_area("Ketik kata/kalimat atau ketuk ikon mikrofon di keyboard Anda:", height=100)
     
-    teks_untuk_diterjemahkan = ""
-    
-    if metode_input == "✍️ Ketik Teks":
-        teks_untuk_diterjemahkan = st.text_area("Ketik kata atau kalimat di sini:", height=100)
-    else:
-        st.info("Silakan klik tombol mikrofon di bawah untuk mulai merekam suara Anda:")
-        rekaman_suara = st.audio_input("Rekam Suara")
-        
-        if rekaman_suara is not None:
-            with st.spinner("AI sedang mendengarkan dan menerjemahkan suara..."):
+    if st.button("Terjemahkan ✨"):
+        if teks_siswa:
+            with st.spinner("AI sedang menerjemahkan..."):
                 try:
-                    bytes_audio = rekaman_suara.getvalue()
-                    
                     if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                        perintah_suara = [
-                            "Dengarkan rekaman suara audio berikut. Terjemahkan apa yang diucapkan ke dalam Bahasa Inggris secara akurat. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan, tanpa catatan, dan tanpa pengantar.",
-                            {"mime_type": "audio/wav", "data": bytes_audio}
-                        ]
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
                     else:
-                        perintah_suara = [
-                            "Dengarkan rekaman suara audio berikut. Terjemahkan apa yang diucapkan ke dalam Bahasa Indonesia secara akurat. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan, tanpa catatan, dan tanpa pengantar.",
-                            {"mime_type": "audio/wav", "data": bytes_audio}
-                        ]
-                    
-                    hasil_suara = model_teks.generate_content(perintah_suara)
-                    st.success("Hasil Terjemahan Suara:")
-                    st.write(hasil_suara.text)
+                        perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja tanpa penjelasan tambahan. Teks: {teks_siswa}"
+                        
+                    hasil = model_teks.generate_content(perintah)
+                    st.success("Hasil Terjemahan:")
+                    st.write(hasil.text)
                 except Exception as e:
-                    st.error(f"Gagal memproses suara. Pastikan mikrofon jelas. ({e})")
-
-    # Tombol untuk input teks biasa
-    if metode_input == "✍️ Ketik Teks":
-        if st.button("Terjemahkan Teks ✨"):
-            if teks_untuk_diterjemahkan:
-                with st.spinner("AI sedang menerjemahkan..."):
-                    try:
-                        if pilihan_bahasa == "🇮🇩 Indonesia ➡️ 🇬🇧 Inggris":
-                            perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Inggris. Berikan HANYA hasil terjemahannya saja. Jangan tulis penjelasan atau pengantar. Teks: {teks_untuk_diterjemahkan}"
-                        else:
-                            perintah = f"Tugasmu hanya menerjemahkan teks berikut ke Bahasa Indonesia. Berikan HANYA hasil terjemahannya saja. Jangan tulis penjelasan atau pengantar. Teks: {teks_untuk_diterjemahkan}"
-                            
-                        hasil = model_teks.generate_content(perintah)
-                        st.success("Hasil Terjemahan:")
-                        st.write(hasil.text)
-                    except Exception as e:
-                        st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
-            else:
-                st.warning("Mohon ketik kata atau kalimat terlebih dahulu.")
+                    st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
+        else:
+            st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
