@@ -15,7 +15,7 @@ if "warna_bg" not in st.session_state:
 if "peran" not in st.session_state:
     st.session_state.peran = None
 
-# Jika belum login (Gerbang Depan), atur background Coklat Muda, teks gelap, dan tombol khusus teks putih
+# Jika belum login (Gerbang Depan), atur background Coklat Muda dan tombol teks putih mutlak
 if st.session_state.peran is None:
     st.markdown(
         """
@@ -28,7 +28,10 @@ if st.session_state.peran is None:
         h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {
             color: #2C221E !important;
         }
-        /* Mengubah tombol 'Masuk Aplikasi' menjadi warna gelap dengan teks PUTIH */
+        /* Pemaksa warna teks tombol menjadi PUTIH secara mutlak */
+        div.stButton > button:first-child p {
+            color: #FFFFFF !important;
+        }
         div.stButton > button:first-child {
             background-color: #3D2C24;
             color: #FFFFFF !important;
