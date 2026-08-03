@@ -134,7 +134,6 @@ if st.session_state.peran is None:
     st.markdown("<h4 style='text-align: center; color: #8C4A32; margin-top: 15px;'>✨ Created by : Saiful Hadi ✨</h4>", unsafe_allow_html=True)
     st.write("---")
     
-    # --- PANDUAN PENGGUNAAN DI HALAMAN DEPAN ---
     with st.expander("📖 Panduan Penggunaan & Informasi Aplikasi"):
         st.write("""
         Selamat datang di **Kamus Pintar ALAZKA**! Aplikasi cerdas untuk membantu proses pembelajaran bahasa. 
@@ -176,6 +175,16 @@ try:
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
+
+# ==========================================
+# FUNGSI CACHE (PENGINGAT JAWABAN AI)
+# ==========================================
+@st.cache_data(ttl=86400, show_spinner=False) # Mengingat jawaban selama 24 jam (86400 detik)
+def memori_terjemahan_ai(perintah_teks):
+    """Fungsi ini akan mengingat jawaban dari AI. Jika kata yang sama ditanyakan lagi, 
+    tidak akan memotong limit kuota."""
+    hasil = model_ai.generate_content(perintah_teks)
+    return hasil.text.strip().replace('"', '').replace("'", "")
 
 # ==========================================
 # HALAMAN KHUSUS SISWA (USER)
@@ -226,8 +235,8 @@ if st.session_state.peran == "siswa":
                 st.session_state.warna_bg = "#FDFBF7"
                 st.session_state.warna_teks = "#332D25"
             elif "Abu-abu" in pilihan_warna_siswa:
-                st.session_state.warna_bg = "#2B2B2B"  # Background Gelap
-                st.session_state.warna_teks = "#F0F0F0"  # Teks Terang/Putih
+                st.session_state.warna_bg = "#2B2B2B"  
+                st.session_state.warna_teks = "#F0F0F0"  
             st.rerun()
             
     tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
@@ -256,8 +265,8 @@ if st.session_state.peran == "siswa":
                             perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
                             bahasa_suara = 'id'
                             
-                        hasil = model_ai.generate_content(perintah)
-                        teks_bersih = hasil.text.strip().replace('"', '').replace("'", "")
+                        # MENGGUNAKAN SISTEM CACHE DI SINI
+                        teks_bersih = memori_terjemahan_ai(perintah)
                         
                         st.success("Hasil Terjemahan:")
                         st.write(teks_bersih)
@@ -271,7 +280,6 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        # --- PERBAIKAN PESAN ERROR LIMIT / QUOTA UNTUK TEKS ---
                         pesan_error = str(e)
                         if "429" in pesan_error or "Quota" in pesan_error:
                             st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu tekan tombolnya lagi ya!")
@@ -314,6 +322,7 @@ if st.session_state.peran == "siswa":
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
                             bahasa_suara_objek = 'id'
                             
+                        # Bagian foto tidak di-cache karena foto dari setiap HP selalu memiliki resolusi dan pencahayaan unik (berbeda-beda)
                         hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
                         objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
@@ -329,7 +338,6 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        # --- PERBAIKAN PESAN ERROR LIMIT / QUOTA UNTUK KAMERA ---
                         pesan_error = str(e)
                         if "429" in pesan_error or "Quota" in pesan_error:
                             st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu coba lagi!")
