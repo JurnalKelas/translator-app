@@ -179,10 +179,8 @@ except Exception as e:
 # ==========================================
 # FUNGSI CACHE (PENGINGAT JAWABAN AI)
 # ==========================================
-@st.cache_data(ttl=86400, show_spinner=False) # Mengingat jawaban selama 24 jam (86400 detik)
+@st.cache_data(ttl=86400, show_spinner=False)
 def memori_terjemahan_ai(perintah_teks):
-    """Fungsi ini akan mengingat jawaban dari AI. Jika kata yang sama ditanyakan lagi, 
-    tidak akan memotong limit kuota."""
     hasil = model_ai.generate_content(perintah_teks)
     return hasil.text.strip().replace('"', '').replace("'", "")
 
@@ -265,7 +263,6 @@ if st.session_state.peran == "siswa":
                             perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
                             bahasa_suara = 'id'
                             
-                        # MENGGUNAKAN SISTEM CACHE DI SINI
                         teks_bersih = memori_terjemahan_ai(perintah)
                         
                         st.success("Hasil Terjemahan:")
@@ -280,11 +277,7 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        pesan_error = str(e)
-                        if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu tekan tombolnya lagi ya!")
-                        else:
-                            st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
+                        st.error(f"PESAN ASLI GOOGLE: {e}")
             else:
                 st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
@@ -322,7 +315,6 @@ if st.session_state.peran == "siswa":
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
                             bahasa_suara_objek = 'id'
                             
-                        # Bagian foto tidak di-cache karena foto dari setiap HP selalu memiliki resolusi dan pencahayaan unik (berbeda-beda)
                         hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
                         objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
@@ -338,11 +330,7 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        pesan_error = str(e)
-                        if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu coba lagi!")
-                        else:
-                            st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
+                        st.error(f"PESAN ASLI GOOGLE: {e}")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
@@ -379,7 +367,7 @@ elif st.session_state.peran == "admin":
                         st.success("Teks berhasil dibaca!")
                         st.write(hasil_ekstrak.text)
                     except Exception as e:
-                        st.error(f"Gagal membaca gambar. Pastikan gambar cukup terang. ({e})")
+                        st.error(f"PESAN ASLI GOOGLE: {e}")
                         
     with tab3:
         st.subheader("Ubah Warna Latar Belakang (Background) Aplikasi")
