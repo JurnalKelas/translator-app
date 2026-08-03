@@ -271,7 +271,12 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
+                        # --- PERBAIKAN PESAN ERROR LIMIT / QUOTA UNTUK TEKS ---
+                        pesan_error = str(e)
+                        if "429" in pesan_error or "Quota" in pesan_error:
+                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu tekan tombolnya lagi ya!")
+                        else:
+                            st.error(f"Maaf, terjadi gangguan dari mesin AI: {e}")
             else:
                 st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
@@ -324,7 +329,12 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
+                        # --- PERBAIKAN PESAN ERROR LIMIT / QUOTA UNTUK KAMERA ---
+                        pesan_error = str(e)
+                        if "429" in pesan_error or "Quota" in pesan_error:
+                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 15 detik, lalu coba lagi!")
+                        else:
+                            st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
