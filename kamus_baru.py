@@ -171,7 +171,7 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash') # <-- MENGGUNAKAN MESIN VERSI 1.5 TERBARU
+    model_ai = genai.GenerativeModel('gemini-3.6-flash') # <-- SUDAH DIKEMBALIKAN KE MESIN 3.6
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
