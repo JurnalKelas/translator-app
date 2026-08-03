@@ -40,7 +40,7 @@ def tampilkan_header_logo():
         except: st.write("Logo 1")
     with col2:
         st.markdown("<h2 style='text-align: center; margin: 0;'>Kamus Pintar ALAZKA</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; margin: 0;'>Versi 2.0 (Sistem AI Baru)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; margin: 0;'>Versi 3.0 (Mesin Stabil)</p>", unsafe_allow_html=True)
     with col3:
         try: st.image(Image.open("logo2.png"), width=70)
         except: st.write("Logo 2")
@@ -56,10 +56,10 @@ if st.session_state.peran is None:
         elif sandi != "": st.error("Kunci salah!")
     st.stop()
 
-# --- MENGHUBUNGKAN KE AI ---
+# --- MENGHUBUNGKAN KE AI (MENGGUNAKAN 3.6-FLASH) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    model_ai = genai.GenerativeModel('gemini-3.6-flash')
 except Exception as e:
     st.error(f"Sistem gagal membaca Kunci API: {e}")
     st.stop()
@@ -83,7 +83,7 @@ if st.session_state.peran == "siswa":
             if teks_siswa:
                 with st.spinner("Menerjemahkan..."):
                     try:
-                        perintah = f"Translate to English: {teks_siswa}" if "Inggris" in pilihan_bahasa else f"Translate to Indonesian: {teks_siswa}"
+                        perintah = f"Translate to English. ONLY direct translation: {teks_siswa}" if "Inggris" in pilihan_bahasa else f"Translate to Indonesian. ONLY direct translation: {teks_siswa}"
                         hasil = memori_terjemahan_ai(perintah)
                         st.success("Hasil:"); st.write(hasil)
                         try:
@@ -91,7 +91,7 @@ if st.session_state.peran == "siswa":
                             tts.save("suara.mp3"); st.audio("suara.mp3")
                         except: st.warning("Audio gagal dimuat.")
                     except Exception as e:
-                        st.error(f"🚨 INFO ERROR BARU: {e}") # PESAN ERROR SUDAH SAYA GANTI TOTAL
+                        st.error(f"Terjadi kendala: {e}")
             else:
                 st.warning("Masukkan teks dulu.")
 
@@ -104,7 +104,7 @@ if st.session_state.peran == "siswa":
                     hasil_objek = model_ai.generate_content(["Identify the main object in this image and provide ONLY its name in Indonesian.", gambar_buka])
                     st.success("Tebakan:"); st.write(hasil_objek.text)
                 except Exception as e:
-                    st.error(f"🚨 INFO ERROR BARU: {e}")
+                    st.error(f"Terjadi kendala: {e}")
 
     with tab_baca_foto:
         gambar_teks = st.file_uploader("Pilih foto tulisan/buku...", type=["jpg", "jpeg", "png"], key="baca_teks")
@@ -115,7 +115,7 @@ if st.session_state.peran == "siswa":
                     hasil_baca = model_ai.generate_content(["Extract text from image and translate to Indonesian.", gb])
                     st.success("Hasil Pembacaan:"); st.write(hasil_baca.text)
                 except Exception as e:
-                    st.error(f"🚨 INFO ERROR BARU: {e}")
+                    st.error(f"Terjadi kendala: {e}")
 
 # --- KELUAR ---
 st.write("---")
