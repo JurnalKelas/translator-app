@@ -339,12 +339,12 @@ if st.session_state.peran == "siswa":
                     except Exception as e:
                         pesan_error = str(e)
                         if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
+                            st.warning(f"⏳ Batas kecepatan Google tercapai. Info asli: {pesan_error}")
                         else:
                             st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
 
     # ----------------------------------------
-    # TAB 3: BACA & TERJEMAH TULISAN DARI FOTO (FITUR BARU)
+    # TAB 3: BACA & TERJEMAH TULISAN DARI FOTO
     # ----------------------------------------
     with tab_baca_foto:
         st.write("---")
@@ -372,11 +372,11 @@ if st.session_state.peran == "siswa":
             if st.button("Baca & Terjemahkan Tulisan ✨"):
                 with st.spinner("AI sedang mengekstrak teks dari gambar dan menerjemahkannya..."):
                     try:
-                        if "Indonesia" in pilihan_bahasa_foto: # Artinya Inggris ke Indonesia
+                        if "Indonesia" in pilihan_bahasa_foto: 
                             perintah_baca = "Extract all the text from this image accurately. Then, translate that text into Indonesian. Format your output EXACTLY like this:\n\n**Teks Asli (Inggris):**\n[insert extracted text here]\n\n**Terjemahan (Indonesia):**\n[insert translated text here]"
                             bahasa_suara_baca = 'id'
                             pemisah = "**Terjemahan (Indonesia):**"
-                        else: # Artinya Indonesia ke Inggris
+                        else: 
                             perintah_baca = "Extract all the text from this image accurately. Then, translate that text into English. Format your output EXACTLY like this:\n\n**Teks Asli (Indonesia):**\n[insert extracted text here]\n\n**Terjemahan (Inggris):**\n[insert translated text here]"
                             bahasa_suara_baca = 'en'
                             pemisah = "**Terjemahan (Inggris):**"
@@ -387,7 +387,6 @@ if st.session_state.peran == "siswa":
                         st.success("Hasil Pembacaan Dokumen:")
                         st.write(teks_hasil_baca)
                         
-                        # Mengambil hanya bagian terjemahannya saja untuk dibacakan oleh suara
                         try:
                             if pemisah in teks_hasil_baca:
                                 teks_suara_saja = teks_hasil_baca.split(pemisah)[1].strip()
@@ -404,7 +403,7 @@ if st.session_state.peran == "siswa":
                     except Exception as e:
                         pesan_error = str(e)
                         if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
+                            st.warning(f"⏳ Batas kecepatan Google tercapai. Info asli: {pesan_error}")
                         else:
                             st.error(f"Gagal membaca tulisan. Pastikan tulisan di foto terlihat jelas, tidak buram, dan terang. ({e})")
 
