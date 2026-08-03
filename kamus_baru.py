@@ -143,16 +143,13 @@ if st.session_state.peran is None:
            * Masukkan kata sandi yang sesuai dengan peran Anda (Siswa atau Admin) pada kolom di bawah.
         
         2. **Menu Terjemahan Teks & Suara:**
-           * Pilih arah bahasa terjemahan (Indonesia ➡️ Inggris atau sebaliknya).
-           * Ketik teks atau gunakan ikon mikrofon (🎤) pada *keyboard* HP Anda untuk berbicara secara langsung.
-           * Tekan tombol **"Terjemahkan Teks ✨"** untuk melihat hasil dan mendengarkan pelafalannya (🔊).
+           * Ketik teks atau gunakan mikrofon untuk berbicara.
         
         3. **Menu Deteksi Objek Foto:**
-           * Buka tab kamera, lalu ambil foto benda di sekitar Anda atau unggah dari galeri.
-           * AI akan secara otomatis mengenali nama benda tersebut dan menerjemahkannya lengkap dengan suara pelafalannya!
+           * Buka tab kamera, ambil foto benda di sekitar Anda, dan AI akan menebak nama bendanya.
            
-        4. **Personalisasi Warna (Mood):**
-           * Anda dapat mengganti warna latar belakang (*background*) aplikasi sesuai dengan suasana hati atau kenyamanan mata Anda melalui menu pilihan warna di dalam aplikasi.
+        4. **Menu Terjemah Tulisan dari Foto (BARU):**
+           * Foto halaman buku paket atau tulisan di papan tulis, dan biarkan AI membacakan serta menerjemahkannya untuk Anda!
         """)
     
     st.write("---")
@@ -171,7 +168,7 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-3.6-flash') # Mesin tercepat dan paling stabil
+    model_ai = genai.GenerativeModel('gemini-3.6-flash')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -237,8 +234,12 @@ if st.session_state.peran == "siswa":
                 st.session_state.warna_teks = "#F0F0F0"  
             st.rerun()
             
-    tab_teks, tab_kamera = st.tabs(["✍️ Terjemah Teks / Suara", "📷 Deteksi & Terjemah Objek Foto"])
+    # MEMBUAT 3 TAB AGAR RAPI
+    tab_teks, tab_kamera, tab_baca_foto = st.tabs(["✍️ Terjemah Teks", "📷 Deteksi Benda", "📄 Baca Tulisan Foto"])
     
+    # ----------------------------------------
+    # TAB 1: TERJEMAH TEKS & SUARA
+    # ----------------------------------------
     with tab_teks:
         st.write("---")
         pilihan_bahasa = st.radio(
@@ -263,19 +264,17 @@ if st.session_state.peran == "siswa":
                             perintah = f"Translate this English text to Indonesian. Provide ONLY the direct translation without any explanation or notes: {teks_siswa}"
                             bahasa_suara = 'id'
                             
-                        # Proses Terjemahan
                         teks_bersih = memori_terjemahan_ai(perintah)
                         
                         st.success("Hasil Terjemahan:")
                         st.write(teks_bersih)
                         
-                        # Fitur Audio Pelafalan (gTTS)
                         try:
                             tts = gTTS(text=teks_bersih, lang=bahasa_suara, slow=False)
                             file_suara = "suara_terjemahan.mp3"
                             tts.save(file_suara)
                             st.audio(file_suara, format="audio/mp3")
-                        except Exception as err_suara:
+                        except Exception:
                             st.warning("Pemutar audio pelafalan sedang memuat. Coba tekan tombol lagi.")
                             
                     except Exception as e:
@@ -287,31 +286,33 @@ if st.session_state.peran == "siswa":
             else:
                 st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
+    # ----------------------------------------
+    # TAB 2: DETEKSI OBJEK BENDA DARI KAMERA
+    # ----------------------------------------
     with tab_kamera:
         st.write("---")
         pilihan_arah_objek = st.radio(
-            "Pilih hasil terjemahan nama objek:",
+            "Pilih hasil terjemahan nama objek benda:",
             ("🇬🇧 Nama Objek dalam Bahasa Inggris", "🇮🇩 Nama Objek dalam Bahasa Indonesia"),
             horizontal=True,
             key="radio_objek"
         )
         st.write("---")
+        st.info("💡 **Tips:** Foto benda di sekitar Anda, lalu AI akan menebak nama benda tersebut!")
         
-        st.info("💡 **Tips:** Foto benda atau objek apa saja di sekitar Anda, lalu AI akan menebak dan menerjemahkannya!")
-        
-        sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True)
+        sumber_gambar = st.radio("Pilih sumber gambar:", ("📸 Ambil Foto Langsung (Kamera)", "📁 Unggah dari Galeri"), horizontal=True, key="sumber_objek")
         
         gambar_unggah = None
         if sumber_gambar == "📸 Ambil Foto Langsung (Kamera)":
-            gambar_unggah = st.camera_input("Ambil foto teks atau objek yang ingin dikenali")
+            gambar_unggah = st.camera_input("Ambil foto objek yang ingin dikenali", key="kamera_objek")
         else:
-            gambar_unggah = st.file_uploader("Pilih file foto objek...", type=["jpg", "jpeg", "png"])
+            gambar_unggah = st.file_uploader("Pilih file foto objek...", type=["jpg", "jpeg", "png"], key="upload_objek")
             
         if gambar_unggah is not None:
             gambar_buka = Image.open(gambar_unggah)
             st.image(gambar_buka, caption="Objek yang dianalisis", use_column_width=True)
             
-            if st.button("Identifikasi & Terjemahkan Objek ✨"):
+            if st.button("Tebak Benda Ini! ✨"):
                 with st.spinner("AI sedang mengenali benda di foto..."):
                     try:
                         if "Inggris" in pilihan_arah_objek:
@@ -321,21 +322,19 @@ if st.session_state.peran == "siswa":
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
                             bahasa_suara_objek = 'id'
                             
-                        # Proses Deteksi Objek
                         hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
                         objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
-                        st.success("Hasil Identifikasi Objek:")
+                        st.success("Tebakan AI untuk Benda Ini:")
                         st.write(objek_bersih)
                         
-                        # Fitur Audio Pelafalan (gTTS)
                         try:
                             tts_objek = gTTS(text=objek_bersih, lang=bahasa_suara_objek, slow=False)
                             file_suara_objek = "suara_objek.mp3"
                             tts_objek.save(file_suara_objek)
                             st.audio(file_suara_objek, format="audio/mp3")
-                        except Exception as err_suara:
-                            st.warning("Pemutar audio pelafalan sedang memuat. Coba tekan tombol lagi.")
+                        except Exception:
+                            st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
                         pesan_error = str(e)
@@ -343,6 +342,71 @@ if st.session_state.peran == "siswa":
                             st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
                         else:
                             st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
+
+    # ----------------------------------------
+    # TAB 3: BACA & TERJEMAH TULISAN DARI FOTO (FITUR BARU)
+    # ----------------------------------------
+    with tab_baca_foto:
+        st.write("---")
+        pilihan_bahasa_foto = st.radio(
+            "Pilih bahasa untuk menerjemahkan tulisan:",
+            ("🇮🇩 Buku Inggris ➡️ Terjemahkan ke Indonesia", "🇬🇧 Buku Indonesia ➡️ Terjemahkan ke Inggris"),
+            horizontal=True,
+            key="radio_foto_teks"
+        )
+        st.write("---")
+        st.info("💡 **Tips:** Foto tulisan di buku pelajaran atau papan tulis, AI akan membacanya dan langsung menerjemahkannya!")
+        
+        sumber_foto_teks = st.radio("Pilih sumber foto:", ("📸 Ambil Foto Tulisan", "📁 Unggah dari Galeri"), horizontal=True, key="sumber_foto_teks")
+        
+        gambar_teks_unggah = None
+        if sumber_foto_teks == "📸 Ambil Foto Tulisan":
+            gambar_teks_unggah = st.camera_input("Ambil foto teks yang ingin dibaca", key="kamera_teks")
+        else:
+            gambar_teks_unggah = st.file_uploader("Pilih file foto tulisan...", type=["jpg", "jpeg", "png"], key="upload_teks")
+            
+        if gambar_teks_unggah is not None:
+            gambar_teks_buka = Image.open(gambar_teks_unggah)
+            st.image(gambar_teks_buka, caption="Foto tulisan yang akan dibaca", use_column_width=True)
+            
+            if st.button("Baca & Terjemahkan Tulisan ✨"):
+                with st.spinner("AI sedang mengekstrak teks dari gambar dan menerjemahkannya..."):
+                    try:
+                        if "Indonesia" in pilihan_bahasa_foto: # Artinya Inggris ke Indonesia
+                            perintah_baca = "Extract all the text from this image accurately. Then, translate that text into Indonesian. Format your output EXACTLY like this:\n\n**Teks Asli (Inggris):**\n[insert extracted text here]\n\n**Terjemahan (Indonesia):**\n[insert translated text here]"
+                            bahasa_suara_baca = 'id'
+                            pemisah = "**Terjemahan (Indonesia):**"
+                        else: # Artinya Indonesia ke Inggris
+                            perintah_baca = "Extract all the text from this image accurately. Then, translate that text into English. Format your output EXACTLY like this:\n\n**Teks Asli (Indonesia):**\n[insert extracted text here]\n\n**Terjemahan (Inggris):**\n[insert translated text here]"
+                            bahasa_suara_baca = 'en'
+                            pemisah = "**Terjemahan (Inggris):**"
+                            
+                        hasil_baca = model_ai.generate_content([perintah_baca, gambar_teks_buka])
+                        teks_hasil_baca = hasil_baca.text.strip()
+                        
+                        st.success("Hasil Pembacaan Dokumen:")
+                        st.write(teks_hasil_baca)
+                        
+                        # Mengambil hanya bagian terjemahannya saja untuk dibacakan oleh suara
+                        try:
+                            if pemisah in teks_hasil_baca:
+                                teks_suara_saja = teks_hasil_baca.split(pemisah)[1].strip()
+                            else:
+                                teks_suara_saja = teks_hasil_baca
+                                
+                            tts_baca = gTTS(text=teks_suara_saja, lang=bahasa_suara_baca, slow=False)
+                            file_suara_baca = "suara_baca.mp3"
+                            tts_baca.save(file_suara_baca)
+                            st.audio(file_suara_baca, format="audio/mp3")
+                        except Exception:
+                            st.warning("Pemutar audio pelafalan sedang memuat.")
+                            
+                    except Exception as e:
+                        pesan_error = str(e)
+                        if "429" in pesan_error or "Quota" in pesan_error:
+                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
+                        else:
+                            st.error(f"Gagal membaca tulisan. Pastikan tulisan di foto terlihat jelas, tidak buram, dan terang. ({e})")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
@@ -405,28 +469,28 @@ elif st.session_state.peran == "admin":
             if "Coklat" in pilihan_tema:
                 st.session_state.warna_bg = "#F5EBE6"
                 st.session_state.warna_teks = "#2C221E"
-            elif "Putih" in pilihan_warna_siswa:
+            elif "Putih" in pilihan_tema:
                 st.session_state.warna_bg = "#FFFFFF"
                 st.session_state.warna_teks = "#1A1A1A"
-            elif "Hijau" in pilihan_warna_siswa:
+            elif "Hijau" in pilihan_tema:
                 st.session_state.warna_bg = "#E6F9F0"
                 st.session_state.warna_teks = "#0D3B22"
-            elif "Biru" in pilihan_warna_siswa:
+            elif "Biru" in pilihan_tema:
                 st.session_state.warna_bg = "#E6F2FF"
                 st.session_state.warna_teks = "#0B2E59"
-            elif "Kuning" in pilihan_warna_siswa:
+            elif "Kuning" in pilihan_tema:
                 st.session_state.warna_bg = "#FFF9E6"
                 st.session_state.warna_teks = "#4D3800"
-            elif "Merah Muda" in pilihan_warna_siswa:
+            elif "Merah Muda" in pilihan_tema:
                 st.session_state.warna_bg = "#FFE6EE"
                 st.session_state.warna_teks = "#590D22"
-            elif "Ungu" in pilihan_warna_siswa:
+            elif "Ungu" in pilihan_tema:
                 st.session_state.warna_bg = "#F3E6FF"
                 st.session_state.warna_teks = "#2E0B59"
-            elif "Krim" in pilihan_warna_siswa:
+            elif "Krim" in pilihan_tema:
                 st.session_state.warna_bg = "#FDFBF7"
                 st.session_state.warna_teks = "#332D25"
-            elif "Abu-abu" in pilihan_warna_siswa:
+            elif "Abu-abu" in pilihan_tema:
                 st.session_state.warna_bg = "#2B2B2B"
                 st.session_state.warna_teks = "#F0F0F0"
                 
