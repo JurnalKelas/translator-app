@@ -40,7 +40,7 @@ def tampilkan_header_logo():
         except: st.write("Logo 1")
     with col2:
         st.markdown("<h2 style='text-align: center; margin: 0;'>Kamus Pintar ALAZKA</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; margin: 0;'>Versi 3.0 (Mesin Stabil)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; margin: 0;'>Versi 4.0 (Standar Stable)</p>", unsafe_allow_html=True)
     with col3:
         try: st.image(Image.open("logo2.png"), width=70)
         except: st.write("Logo 2")
@@ -56,10 +56,11 @@ if st.session_state.peran is None:
         elif sandi != "": st.error("Kunci salah!")
     st.stop()
 
-# --- MENGHUBUNGKAN KE AI (MENGGUNAKAN 3.6-FLASH) ---
+# --- MENGHUBUNGKAN KE AI (MENGGUNAKAN GEMINI-PRO) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-3.6-flash')
+    # Menggunakan gemini-pro yang memiliki kuota harian standar lebih stabil untuk teks & gambar
+    model_ai = genai.GenerativeModel('gemini-pro')
 except Exception as e:
     st.error(f"Sistem gagal membaca Kunci API: {e}")
     st.stop()
@@ -101,7 +102,9 @@ if st.session_state.peran == "siswa":
             with st.spinner("Menebak benda..."):
                 try:
                     gambar_buka = Image.open(gambar_unggah)
-                    hasil_objek = model_ai.generate_content(["Identify the main object in this image and provide ONLY its name in Indonesian.", gambar_buka])
+                    # Menggunakan model multimodal pro untuk gambar
+                    model_vision = genai.GenerativeModel('gemini-1.5-pro')
+                    hasil_objek = model_vision.generate_content(["Identify the main object in this image and provide ONLY its name in Indonesian.", gambar_buka])
                     st.success("Tebakan:"); st.write(hasil_objek.text)
                 except Exception as e:
                     st.error(f"Terjadi kendala: {e}")
@@ -112,7 +115,8 @@ if st.session_state.peran == "siswa":
             with st.spinner("Membaca dan Menerjemahkan..."):
                 try:
                     gb = Image.open(gambar_teks)
-                    hasil_baca = model_ai.generate_content(["Extract text from image and translate to Indonesian.", gb])
+                    model_vision = genai.GenerativeModel('gemini-1.5-pro')
+                    hasil_baca = model_vision.generate_content(["Extract text from image and translate to Indonesian.", gb])
                     st.success("Hasil Pembacaan:"); st.write(hasil_baca.text)
                 except Exception as e:
                     st.error(f"Terjadi kendala: {e}")
