@@ -157,7 +157,8 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash-latest')
+    # --- PERBAIKAN: MENGEMBALIKAN NAMA AI KE VERSI STANDAR YANG BENAR ---
+    model_ai = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -291,7 +292,6 @@ if st.session_state.peran == "siswa":
             
         if gambar_unggah is not None:
             gambar_buka = Image.open(gambar_unggah)
-            # PERBAIKAN: use_container_width menggantikan use_column_width
             st.image(gambar_buka, caption="Objek yang dianalisis", use_container_width=True)
             
             if st.button("Tebak Benda Ini! ✨"):
@@ -342,7 +342,6 @@ if st.session_state.peran == "siswa":
             
         if gambar_teks_unggah is not None:
             gambar_teks_buka = Image.open(gambar_teks_unggah)
-            # PERBAIKAN: use_container_width menggantikan use_column_width
             st.image(gambar_teks_buka, caption="Foto tulisan yang akan dibaca", use_container_width=True)
             
             if st.button("Baca & Terjemahkan Tulisan ✨"):
@@ -411,7 +410,6 @@ elif st.session_state.peran == "admin":
         
         if gambar_unggah_admin is not None:
             gambar_buka_admin = Image.open(gambar_unggah_admin)
-            # PERBAIKAN: use_container_width menggantikan use_column_width
             st.image(gambar_buka_admin, caption="Gambar yang diunggah", use_container_width=True)
             
             if st.button("Baca & Ekstrak Teks"):
