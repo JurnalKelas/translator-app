@@ -140,13 +140,33 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI TERBARU ---
+# --- MENGHUBUNGKAN KE OTAK AI (JURUS DETEKSI OTOMATIS) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Kita kunci 100% menggunakan mesin paling stabil dan pintar saat ini
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Meminta daftar model yang BENAR-BENAR TERSEDIA DAN AKTIF di akun Google Bapak
+    daftar_tersedia = []
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            daftar_tersedia.append(m.name.replace("models/", ""))
+            
+    # Memilih mesin terbaik yang tersedia (prioritas: flash, lalu pro, lalu yang pertama ada)
+    mesin_aktif = None
+    for nama in daftar_tersedia:
+        if 'flash' in nama:
+            mesin_aktif = nama
+            break
+    if not mesin_aktif:
+        for nama in daftar_tersedia:
+            if 'pro' in nama:
+                mesin_aktif = nama
+                break
+    if not mesin_aktif and len(daftar_tersedia) > 0:
+        mesin_aktif = daftar_tersedia[0]
+        
+    model_ai = genai.GenerativeModel(mesin_aktif)
 except Exception as e:
-    st.error(f"Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang. ({e})")
+    st.error(f"Koneksi ke sistem AI terputus. Info Error: {e}")
     st.stop()
 
 @st.cache_data(ttl=86400, show_spinner=False)
@@ -247,7 +267,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_objek.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal mengenali benda: Pastikan file requirements.txt sudah memuat google-generativeai>=0.7.0. Info Error: {e}")
+                        st.error(f"Gagal mengenali benda: {e}")
 
     # --- TAB BACA FOTO ---
     with tab_baca_foto:
@@ -281,13 +301,16 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_baca.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal membaca tulisan: Pastikan file requirements.txt sudah memuat google-generativeai>=0.7.0. Info Error: {e}")
+                        st.error(f"Gagal membaca tulisan: {e}")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN
 # ==========================================
 elif st.session_state.peran == "admin":
     tampilkan_header_logo()
+    
+    # TAB ADMIN JUGA SAYA TAMBAHKAN INDIKATOR NAMA MESIN AI AGAR KITA TAHU MESIN APA YANG AKTIF
+    st.info(f"Selamat bekerja, Pak Saiful! Sistem saat ini terhubung secara otomatis dengan mesin: **{mesin_aktif}**")
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     with tab1:
