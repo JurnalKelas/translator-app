@@ -92,18 +92,15 @@ except Exception as e:
 if st.session_state.peran == "siswa":
     st.title("📖 ALAZKA Smart English Dictionary")
     
-    # --- PANDUAN PEMAKAIAN ---
     with st.expander("💡 Panduan Cara Pakai Kamus (Klik di sini)"):
         st.markdown("""
         **Selamat datang di Kamus Pintar ALAZKA!**
         Berikut adalah panduan singkat cara menggunakannya:
         
-        1. 🎨 **Ganti Warna Tampilan:** Coba klik menu *'Sesuaikan Warna Tampilan'* di atas. Kamu bisa memilih Mode Gelap atau warna cerah lainnya agar mata lebih nyaman saat membaca.
-        2. ✍️ **Mulai Mengetik:** Ketik kata atau kalimat berbahasa Inggris yang belum kamu mengerti di dalam kotak besar di bawah. Kamu juga bisa mengetik bahasa Indonesia untuk diubah ke bahasa Inggris!
-        3. ✨ **Lihat Keajaibannya:** Klik tombol **'Terjemahkan Teks ✨'**. Tunggu sebentar, dan mesin AI akan memberikan arti, penjelasan, beserta contoh kalimatnya untukmu.
-        4. 🚪 **Selesai Belajar:** Jika sudah selesai, jangan lupa klik tombol **'Keluar (Logout)'** di bagian paling bawah layar.
-        
-        *Selamat belajar dan terus kembangkan kemampuan bahasamu!*
+        1. 🎨 **Ganti Warna Tampilan:** Coba klik menu *'Sesuaikan Warna Tampilan'* di atas.
+        2. ✍️ **Mulai Mengetik:** Ketik kata atau kalimat berbahasa Inggris di kotak bawah. Bisa juga dari bahasa Indonesia!
+        3. ✨ **Lihat Keajaibannya:** Klik tombol **'Terjemahkan Teks ✨'**. Mesin AI akan memberikan arti dan penjelasannya.
+        4. 🚪 **Selesai Belajar:** Jika sudah selesai, klik tombol **'Keluar (Logout)'** di bagian paling bawah.
         """)
     
     st.write("Silakan ketik kata atau kalimat yang ingin diterjemahkan di bawah ini:")
@@ -131,15 +128,25 @@ elif st.session_state.peran == "admin":
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     
+    # --- PERBAIKAN: DITAMBAHKAN TOMBOL UNGGAH GAMBAR DI INPUT MANUAL ---
     with tab1:
         st.subheader("Tambah Kosakata Manual")
         kata_baru = st.text_input("Masukkan Kata (Bahasa Inggris/Indonesia):")
         arti_kata = st.text_input("Masukkan Artinya:")
+        
+        # Ini adalah tombol baru untuk mengunggah gambar ilustrasi
+        gambar_ilustrasi = st.file_uploader("Unggah Gambar Benda/Ilustrasi (Opsional):", type=["jpg", "jpeg", "png"])
+        
         if st.button("Simpan ke Database"):
             if kata_baru and arti_kata:
-                st.success(f"Berhasil! Kata '{kata_baru}' telah tersimpan.")
+                if gambar_ilustrasi is not None:
+                    # Menampilkan preview gambar jika diunggah
+                    st.image(gambar_ilustrasi, caption=f"Ilustrasi untuk: {kata_baru}", width=250)
+                    st.success(f"Berhasil! Kata '{kata_baru}' beserta gambarnya telah tersimpan.")
+                else:
+                    st.success(f"Berhasil! Kata '{kata_baru}' telah tersimpan (tanpa gambar).")
             else:
-                st.warning("Mohon isi kedua kolom di atas.")
+                st.warning("Mohon isi Kata dan Artinya terlebih dahulu.")
                 
     with tab2:
         st.subheader("Ekstrak Kosakata dari Gambar/Foto")
@@ -152,7 +159,6 @@ elif st.session_state.peran == "admin":
             if st.button("Baca & Ekstrak Teks"):
                 with st.spinner("Membaca teks dari gambar..."):
                     try:
-                        # --- PERINTAH BARU YANG LEBIH KETAT ---
                         perintah_gambar = "Baca gambar ini dengan sangat teliti. Ekstrak dan salin persis semua teks yang terlihat di gambar. Jangan menambahkan kalimat penutup, jangan menerjemahkan, dan jangan mengarang kata-kata yang tidak ada di gambar. Susun hasilnya dalam bentuk daftar (list) yang rapi."
                         hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka])
                         st.success("Teks berhasil dibaca!")
