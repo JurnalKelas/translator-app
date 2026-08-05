@@ -10,27 +10,22 @@ st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="c
 
 # --- INISIALISASI PENYIMPANAN WARNA DI SESI APLIKASI ---
 if "warna_bg" not in st.session_state:
-    st.session_state.warna_bg = "#F5EBE6" # Default Coklat Muda Hangat
+    st.session_state.warna_bg = "#F5EBE6"
 
 if "warna_teks" not in st.session_state:
-    st.session_state.warna_teks = "#2C221E" # Default Teks Gelap
+    st.session_state.warna_teks = "#2C221E"
 
 # --- GAYA CSS GLOBAL DINAMIS BERDASARKAN PILIHAN WARNA ---
 st.markdown(
     f"""
     <style>
-    /* Mengubah background dan warna teks aplikasi secara otomatis dan serasi */
     .stApp {{
         background-color: {st.session_state.warna_bg} !important;
         color: {st.session_state.warna_teks} !important;
     }}
-    
-    /* Mengubah warna seluruh teks judul, subjudul, dan label agar selaras dengan tema */
     h1, h2, h3, h4, h5, h6, p, span, label, .streamlit-expanderHeader {{
         color: {st.session_state.warna_teks} !important;
     }}
-    
-    /* Tombol Utama (Masuk Aplikasi & Terjemahkan) */
     div.stButton > button:first-child p {{
         color: #FFFFFF !important;
     }}
@@ -45,8 +40,6 @@ st.markdown(
         background-color: #5C4B43;
         color: #FFFFFF !important;
     }}
-    
-    /* GAYA UTAMA TOMBOL KAMERA (Take Photo / Clear Photo) */
     button[data-testid="baseButton-secondary"], 
     div[data-testid="stCameraInput"] button,
     .stCameraInput button {{
@@ -54,7 +47,6 @@ st.markdown(
         border: none !important;
         border-radius: 8px !important;
     }}
-    
     button[data-testid="baseButton-secondary"] *, 
     div[data-testid="stCameraInput"] button *,
     .stCameraInput button * {{
@@ -62,13 +54,10 @@ st.markdown(
         fill: #FFFFFF !important;
         font-weight: bold !important;
     }}
-    
     button[data-testid="baseButton-secondary"]:hover,
     div[data-testid="stCameraInput"] button:hover {{
         background-color: #5C4B43 !important;
     }}
-
-    /* Kotak Text Area */
     div[data-testid="stTextArea"] textarea {{
         background-color: #E6F4EA !important;
         color: #137333 !important;
@@ -168,7 +157,6 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # --- PERBAIKAN: MENGGUNAKAN VERSI AI TERBARU ---
     model_ai = genai.GenerativeModel('gemini-1.5-flash-latest')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
@@ -235,12 +223,8 @@ if st.session_state.peran == "siswa":
                 st.session_state.warna_teks = "#F0F0F0"
             st.rerun()
             
-    # MEMBUAT 3 TAB AGAR RAPI
     tab_teks, tab_kamera, tab_baca_foto = st.tabs(["✍️ Terjemah Teks", "📷 Deteksi Benda", "📄 Baca Tulisan Foto"])
     
-    # ----------------------------------------
-    # TAB 1: TERJEMAH TEKS & SUARA
-    # ----------------------------------------
     with tab_teks:
         st.write("---")
         pilihan_bahasa = st.radio(
@@ -266,7 +250,6 @@ if st.session_state.peran == "siswa":
                             bahasa_suara = 'id'
                             
                         teks_bersih = memori_terjemahan_ai(perintah)
-                        
                         st.success("Hasil Terjemahan:")
                         st.write(teks_bersih)
                         
@@ -287,9 +270,6 @@ if st.session_state.peran == "siswa":
             else:
                 st.warning("Mohon masukkan kata atau kalimat terlebih dahulu.")
 
-    # ----------------------------------------
-    # TAB 2: DETEKSI OBJEK BENDA DARI KAMERA
-    # ----------------------------------------
     with tab_kamera:
         st.write("---")
         pilihan_arah_objek = st.radio(
@@ -311,7 +291,8 @@ if st.session_state.peran == "siswa":
             
         if gambar_unggah is not None:
             gambar_buka = Image.open(gambar_unggah)
-            st.image(gambar_buka, caption="Objek yang dianalisis", use_column_width=True)
+            # PERBAIKAN: use_container_width menggantikan use_column_width
+            st.image(gambar_buka, caption="Objek yang dianalisis", use_container_width=True)
             
             if st.button("Tebak Benda Ini! ✨"):
                 with st.spinner("AI sedang mengenali benda di foto..."):
@@ -338,15 +319,8 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        pesan_error = str(e)
-                        if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
-                        else:
-                            st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
+                        st.error(f"Gagal mengenali objek. Pastikan foto terlihat jelas. ({e})")
 
-    # ----------------------------------------
-    # TAB 3: BACA & TERJEMAH TULISAN DARI FOTO
-    # ----------------------------------------
     with tab_baca_foto:
         st.write("---")
         pilihan_bahasa_foto = st.radio(
@@ -368,7 +342,8 @@ if st.session_state.peran == "siswa":
             
         if gambar_teks_unggah is not None:
             gambar_teks_buka = Image.open(gambar_teks_unggah)
-            st.image(gambar_teks_buka, caption="Foto tulisan yang akan dibaca", use_column_width=True)
+            # PERBAIKAN: use_container_width menggantikan use_column_width
+            st.image(gambar_teks_buka, caption="Foto tulisan yang akan dibaca", use_container_width=True)
             
             if st.button("Baca & Terjemahkan Tulisan ✨"):
                 with st.spinner("AI sedang mengekstrak teks dari gambar dan menerjemahkannya..."):
@@ -402,11 +377,7 @@ if st.session_state.peran == "siswa":
                             st.warning("Pemutar audio pelafalan sedang memuat.")
                             
                     except Exception as e:
-                        pesan_error = str(e)
-                        if "429" in pesan_error or "Quota" in pesan_error:
-                            st.warning("⏳ Mesin AI sedang melayani banyak siswa. Mohon tunggu sekitar 5 detik, lalu coba lagi!")
-                        else:
-                            st.error(f"Gagal membaca tulisan. Pastikan tulisan di foto terlihat jelas, tidak buram, dan terang. ({e})")
+                        st.error(f"Gagal membaca tulisan. Pastikan tulisan di foto terlihat jelas. ({e})")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN (PAK SAIFUL)
@@ -440,7 +411,8 @@ elif st.session_state.peran == "admin":
         
         if gambar_unggah_admin is not None:
             gambar_buka_admin = Image.open(gambar_unggah_admin)
-            st.image(gambar_buka_admin, caption="Gambar yang diunggah", use_column_width=True)
+            # PERBAIKAN: use_container_width menggantikan use_column_width
+            st.image(gambar_buka_admin, caption="Gambar yang diunggah", use_container_width=True)
             
             if st.button("Baca & Ekstrak Teks"):
                 with st.spinner("Membaca teks dari gambar menggunakan AI..."):
