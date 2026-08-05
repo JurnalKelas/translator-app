@@ -140,27 +140,32 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI (JURUS DETEKSI OTOMATIS) ---
+# --- MENGHUBUNGKAN KE OTAK AI (JURUS BLOKIR VERSI 2.5) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     
-    # Meminta daftar model yang BENAR-BENAR TERSEDIA DAN AKTIF di akun Google Bapak
     daftar_tersedia = []
+    # Membaca daftar dari Google
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
-            daftar_tersedia.append(m.name.replace("models/", ""))
-            
-    # Memilih mesin terbaik yang tersedia (prioritas: flash, lalu pro, lalu yang pertama ada)
+            nama_model = m.name.replace("models/", "")
+            # KITA BLOKIR VERSI 2.5 KARENA DITOLAK GOOGLE UNTUK AKUN BAPAK
+            if "2.5" not in nama_model:
+                daftar_tersedia.append(nama_model)
+                
+    # Memilih mesin terbaik yang DIIZINKAN (prioritas: flash, lalu pro)
     mesin_aktif = None
     for nama in daftar_tersedia:
         if 'flash' in nama:
             mesin_aktif = nama
             break
+            
     if not mesin_aktif:
         for nama in daftar_tersedia:
             if 'pro' in nama:
                 mesin_aktif = nama
                 break
+                
     if not mesin_aktif and len(daftar_tersedia) > 0:
         mesin_aktif = daftar_tersedia[0]
         
@@ -309,8 +314,7 @@ if st.session_state.peran == "siswa":
 elif st.session_state.peran == "admin":
     tampilkan_header_logo()
     
-    # TAB ADMIN JUGA SAYA TAMBAHKAN INDIKATOR NAMA MESIN AI AGAR KITA TAHU MESIN APA YANG AKTIF
-    st.info(f"Selamat bekerja, Pak Saiful! Sistem saat ini terhubung secara otomatis dengan mesin: **{mesin_aktif}**")
+    st.info(f"✅ Sistem berhasil mendeteksi dan terhubung dengan mesin yang diizinkan: **{mesin_aktif}**")
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     with tab1:
