@@ -168,7 +168,8 @@ if st.session_state.peran is None:
 # --- MENGHUBUNGKAN KE OTAK AI ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    # --- PERBAIKAN: MENGGUNAKAN VERSI AI TERBARU ---
+    model_ai = genai.GenerativeModel('gemini-1.5-flash-latest')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -421,7 +422,6 @@ elif st.session_state.peran == "admin":
         kata_baru = st.text_input("Masukkan Kata (Bahasa Inggris/Indonesia):")
         arti_kata = st.text_input("Masukkan Artinya:")
         
-        # --- PERBAIKAN: DITAMBAHKAN TOMBOL UNGGAH GAMBAR DI INPUT MANUAL ---
         gambar_ilustrasi = st.file_uploader("Unggah Gambar Benda/Ilustrasi (Opsional):", type=["jpg", "jpeg", "png"])
         
         if st.button("Simpan ke Database"):
@@ -445,7 +445,6 @@ elif st.session_state.peran == "admin":
             if st.button("Baca & Ekstrak Teks"):
                 with st.spinner("Membaca teks dari gambar menggunakan AI..."):
                     try:
-                        # --- PERBAIKAN: PERINTAH AI LEBIH KETAT AGAR AKURAT ---
                         perintah_gambar = "Baca gambar ini dengan sangat teliti. Ekstrak dan salin persis semua teks yang terlihat di gambar. Jangan menambahkan kalimat penutup, jangan menerjemahkan, dan jangan mengarang kata-kata yang tidak ada di gambar. Susun hasilnya dalam bentuk daftar (list) yang rapi."
                         hasil_ekstrak = model_ai.generate_content([perintah_gambar, gambar_buka_admin])
                         st.success("Teks berhasil dibaca!")
