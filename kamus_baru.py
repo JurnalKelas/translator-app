@@ -154,11 +154,12 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI ---
+# --- MENGHUBUNGKAN KE OTAK AI (VERSI STABIL / LEGACY) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # --- PERBAIKAN: MENGEMBALIKAN NAMA AI KE VERSI STANDAR YANG BENAR ---
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    # Kita pisah menjadi dua otak agar 100% dikenali oleh server Streamlit
+    model_teks = genai.GenerativeModel('gemini-pro')
+    model_gambar = genai.GenerativeModel('gemini-pro-vision')
 except Exception as e:
     st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
     st.stop()
@@ -168,7 +169,7 @@ except Exception as e:
 # ==========================================
 @st.cache_data(ttl=86400, show_spinner=False)
 def memori_terjemahan_ai(perintah_teks):
-    hasil = model_ai.generate_content(perintah_teks)
+    hasil = model_teks.generate_content(perintah_teks)
     return hasil.text.strip().replace('"', '').replace("'", "")
 
 # ==========================================
@@ -304,7 +305,7 @@ if st.session_state.peran == "siswa":
                             perintah_objek = "Identify the main object in this image and provide ONLY its name in Indonesian. No extra explanation or notes."
                             bahasa_suara_objek = 'id'
                             
-                        hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
+                        hasil_objek = model_gambar.generate_content([perintah_objek, gambar_buka])
                         objek_bersih = hasil_objek.text.strip().replace('"', '').replace("'", "")
                         
                         st.success("Tebakan AI untuk Benda Ini:")
@@ -356,7 +357,7 @@ if st.session_state.peran == "siswa":
                             bahasa_suara_baca = 'en'
                             pemisah = "**Terjemahan (Inggris):**"
                             
-                        hasil_baca = model_ai.generate_content([perintah_baca, gambar_teks_buka])
+                        hasil_baca = model_gambar.generate_content([perintah_baca, gambar_teks_buka])
                         teks_hasil_baca = hasil_baca.text.strip()
                         
                         st.success("Hasil Pembacaan Dokumen:")
@@ -416,7 +417,7 @@ elif st.session_state.peran == "admin":
                 with st.spinner("Membaca teks dari gambar menggunakan AI..."):
                     try:
                         perintah_gambar = "Baca gambar ini dengan sangat teliti. Ekstrak dan salin persis semua teks yang terlihat di gambar. Jangan menambahkan kalimat penutup, jangan menerjemahkan, dan jangan mengarang kata-kata yang tidak ada di gambar. Susun hasilnya dalam bentuk daftar (list) yang rapi."
-                        hasil_ekstrak = model_ai.generate_content([perintah_gambar, gambar_buka_admin])
+                        hasil_ekstrak = model_gambar.generate_content([perintah_gambar, gambar_buka_admin])
                         st.success("Teks berhasil dibaca!")
                         st.write(hasil_ekstrak.text)
                     except Exception as e:
