@@ -140,17 +140,44 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI ---
+# --- MENGHUBUNGKAN KE OTAK AI (JURUS RADAR OTOMATIS) ---
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # 1. Aplikasi akan memindai akun Bapak untuk melihat mesin apa saja yang diizinkan
+    try:
+        daftar_mesin = [m.name.replace("models/", "") for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    except:
+        daftar_mesin = ["gemini-1.5-flash", "gemini-pro-vision", "gemini-pro"]
+        
+    mesin_gambar_pilihan = "gemini-pro-vision" # Cadangan darurat
+    mesin_teks_pilihan = "gemini-pro"
+    
+    # 2. Mencari mesin untuk mendeteksi gambar (Otomatis)
+    for nama in daftar_mesin:
+        if "1.5-flash" in nama or "vision" in nama or "1.5-pro" in nama:
+            mesin_gambar_pilihan = nama
+            break
+            
+    # 3. Mencari mesin untuk membaca teks (Otomatis)
+    for nama in daftar_mesin:
+        if "1.5-flash" in nama or "pro" in nama:
+            mesin_teks_pilihan = nama
+            break
+            
+    model_teks = genai.GenerativeModel(mesin_teks_pilihan)
+    model_gambar = genai.GenerativeModel(mesin_gambar_pilihan)
+    
 except Exception as e:
-    st.error("Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang.")
+    st.error(f"Koneksi ke sistem AI terputus. Pastikan kunci rahasia sudah terpasang. ({e})")
     st.stop()
 
+# ==========================================
+# FUNGSI CACHE (PENGINGAT JAWABAN AI)
+# ==========================================
 @st.cache_data(ttl=86400, show_spinner=False)
 def memori_terjemahan_ai(perintah_teks):
-    hasil = model_ai.generate_content(perintah_teks)
+    hasil = model_teks.generate_content(perintah_teks)
     return hasil.text.strip().replace('"', '').replace("'", "")
 
 # ==========================================
@@ -234,7 +261,7 @@ if st.session_state.peran == "siswa":
                         lang = 'English' if "Inggris" in pilihan_arah_objek else 'Indonesian'
                         perintah_objek = f"Identify the main object in this image. Output ONLY its name in {lang}."
                         
-                        hasil_objek = model_ai.generate_content([perintah_objek, gambar_buka])
+                        hasil_objek = model_gambar.generate_content([perintah_objek, gambar_buka])
                         objek_teks = hasil_objek.text.strip()
                         
                         st.success("Tebakan AI:")
@@ -267,7 +294,7 @@ if st.session_state.peran == "siswa":
                         
                         perintah_baca = f"Extract all text accurately, then translate it into {lang_to}. Format as:\n\n**Teks Asli:**\n[text]\n\n**Terjemahan:**\n[translated]"
                         
-                        hasil_baca = model_ai.generate_content([perintah_baca, gambar_teks_buka])
+                        hasil_baca = model_gambar.generate_content([perintah_baca, gambar_teks_buka])
                         teks_hasil = hasil_baca.text.strip()
                         
                         st.success("Hasil Pembacaan:")
@@ -305,7 +332,7 @@ elif st.session_state.peran == "admin":
             if st.button("Baca Teks"):
                 with st.spinner("Membaca..."):
                     try:
-                        hasil_ekstrak = model_ai.generate_content(["Ekstrak dan salin persis semua teks di gambar.", gambar_buka_admin])
+                        hasil_ekstrak = model_gambar.generate_content(["Ekstrak dan salin persis semua teks di gambar.", gambar_buka_admin])
                         st.success("Berhasil:")
                         st.write(hasil_ekstrak.text)
                     except Exception as e:
