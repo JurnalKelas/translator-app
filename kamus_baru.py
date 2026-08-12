@@ -169,7 +169,7 @@ try:
     if not mesin_aktif and len(daftar_tersedia) > 0:
         mesin_aktif = daftar_tersedia[0]
         
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    model_ai = genai.GenerativeModel(mesin_aktif)
 except Exception as e:
     st.error(f"Koneksi ke sistem AI terputus. Info Error: {e}")
     st.stop()
