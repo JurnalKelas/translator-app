@@ -96,7 +96,6 @@ with st.sidebar:
     st.subheader("🔑 Pengaturan API Key")
     st.write("Gunakan API Key pribadi Anda agar aplikasi tidak terkena batas kuota (*limit*).")
     
-    # Tombol pintasan langsung ke Google AI Studio untuk membuat API Key
     st.markdown(
         """
         <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display: block; text-align: center; background-color: #8C4A32; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-bottom: 15px;">
@@ -106,7 +105,6 @@ with st.sidebar:
         unsafe_allow_html=True
     )
     
-    # Kolom input API Key user
     api_key_input = st.text_input(
         "Tempel API Key Anda di sini:", 
         type="password", 
@@ -145,7 +143,7 @@ if st.session_state.peran is None:
     with st.expander("📖 Panduan Penggunaan & Informasi Aplikasi"):
         st.write("""
         Selamat datang di **Kamus Pintar ALAZKA**! 
-        1. **API Key Mandiri:** Anda bisa membuat dan memasukkan API Key pribadi melalui menu di bilah sisi (*sidebar*) sebelah kiri agar terhindar dari batas kuota.
+        1. **API Key Mandiri:** Masukkan API Key pribadi melalui menu di bilah sisi (*sidebar*) sebelah kiri.
         2. **Login:** Masukkan kata sandi (Siswa/Admin).
         3. **Terjemahan Teks:** Ketik teks untuk diterjemahkan.
         4. **Deteksi Objek:** Foto benda, AI akan menebak namanya.
@@ -164,21 +162,49 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENENTUKAN KUNCI API YANG DIGUNAKAN (PRIORITAS: INPUT USER ATAU RAHASIA SYSTEM) ---
+# --- MENENTUKAN KUNCI API YANG DIGUNAKAN ---
 kunci_aktif = ""
 if api_key_input:
     kunci_aktif = api_key_input
 elif "GEMINI_API_KEY" in st.secrets:
     kunci_aktif = st.secrets["GEMINI_API_KEY"]
 
-# --- MENGHUBUNGKAN KE OTAK AI ---
+# --- MENGHUBUNGKAN KE OTAK AI (DENGAN PENCARIAN MESIN OTOMATIS) ---
 try:
     if not kunci_aktif:
         st.error("⚠️ Silakan masukkan **API Key** pribadi Anda pada menu di bilah sisi (*sidebar*) sebelah kiri, atau pastikan Secrets sudah terpasang.")
         st.stop()
         
     genai.configure(api_key=kunci_aktif)
-    model_ai = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Mencari daftar model yang diizinkan oleh akun ini secara dinamis
+    daftar_tersedia = []
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            nama_m = m.name.replace("models/", "")
+            # Menghindari versi 2.5 jika dibatasi oleh Google
+            if "2.5" not in nama_m:
+                daftar_tersedia.append(nama_m)
+                
+    # Memilih mesin terbaik yang tersedia
+    mesin_aktif = None
+    for nama in daftar_tersedia:
+        if 'flash' in nama:
+            mesin_aktif = nama
+            break
+    if not mesin_aktif:
+        for nama in daftar_tersedia:
+            if 'pro' in nama:
+                mesin_aktif = nama
+                break
+    if not mesin_aktif and len(daftar_tersedia) > 0:
+        mesin_aktif = daftar_tersedia[0]
+        
+    if not mesin_aktif:
+        st.error("Tidak ada model AI yang tersedia untuk kunci API ini.")
+        st.stop()
+        
+    model_ai = genai.GenerativeModel(mesin_aktif)
 except Exception as e:
     st.error(f"Koneksi ke sistem AI terputus. Pastikan API Key valid. ({e})")
     st.stop()
@@ -248,7 +274,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_teks.mp3", format="audio/mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
+                        st.error(f"Gagal (Pastikan API Key di menu kiri valid atau kuota mencukupi): {e}")
             else: st.warning("Masukkan teks dulu.")
 
     # --- TAB KAMERA OBJEK ---
@@ -281,7 +307,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_objek.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal mengenali benda (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
+                        st.error(f"Gagal mengenali benda (Pastikan API Key di menu kiri valid atau kuota mencukupi): {e}")
 
     # --- TAB BACA FOTO ---
     with tab_baca_foto:
@@ -315,7 +341,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_baca.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal membaca tulisan (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
+                        st.error(f"Gagal membaca tulisan: {e}")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN
@@ -323,7 +349,7 @@ if st.session_state.peran == "siswa":
 elif st.session_state.peran == "admin":
     tampilkan_header_logo()
     
-    st.info("Selamat bekerja, Pak Saiful! Panel Admin aktif.")
+    st.info(f"✅ Panel Admin aktif. Terhubung otomatis dengan mesin: **{mesin_aktif}**")
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     with tab1:
