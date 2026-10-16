@@ -58,7 +58,7 @@ st.markdown(
     div[data-testid="stCameraInput"] button:hover {{
         background-color: #5C4B43 !important;
     }}
-    div[data-testid="stTextArea"] textarea {{
+    div.stTextArea > textarea {{
         background-color: #E6F4EA !important;
         color: #137333 !important;
         border-radius: 8px !important;
@@ -91,6 +91,29 @@ components.html(
     height=0,
 )
 
+# --- BILAH SISI (SIDEBAR) UNTUK PENGATURAN API KEY MANDIRI ---
+with st.sidebar:
+    st.subheader("🔑 Pengaturan API Key")
+    st.write("Gunakan API Key pribadi Anda agar aplikasi tidak terkena batas kuota (*limit*).")
+    
+    # Tombol pintasan langsung ke Google AI Studio untuk membuat API Key
+    st.markdown(
+        """
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display: block; text-align: center; background-color: #8C4A32; color: white; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-bottom: 15px;">
+            🔗 Buat API Key Baru (Gratis)
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Kolom input API Key user
+    api_key_input = st.text_input(
+        "Tempel API Key Anda di sini:", 
+        type="password", 
+        placeholder="AIzaSy...",
+        help="Masukkan kunci pribadi Anda agar aplikasi berjalan lancar tanpa batas kuota."
+    )
+
 # --- SISTEM LOGIN & GEMBOK APLIKASI ---
 if "peran" not in st.session_state:
     st.session_state.peran = None
@@ -122,10 +145,11 @@ if st.session_state.peran is None:
     with st.expander("📖 Panduan Penggunaan & Informasi Aplikasi"):
         st.write("""
         Selamat datang di **Kamus Pintar ALAZKA**! 
-        1. **Login:** Masukkan kata sandi (Siswa/Admin).
-        2. **Terjemahan Teks:** Ketik teks atau bicara via mikrofon HP.
-        3. **Deteksi Objek:** Foto benda, AI akan menebak namanya.
-        4. **Baca Foto:** Foto halaman buku/papan tulis, AI akan membacakannya!
+        1. **API Key Mandiri:** Anda bisa membuat dan memasukkan API Key pribadi melalui menu di bilah sisi (*sidebar*) sebelah kiri agar terhindar dari batas kuota.
+        2. **Login:** Masukkan kata sandi (Siswa/Admin).
+        3. **Terjemahan Teks:** Ketik teks untuk diterjemahkan.
+        4. **Deteksi Objek:** Foto benda, AI akan menebak namanya.
+        5. **Baca Foto:** Foto halaman buku/papan tulis, AI akan membacakannya!
         """)
     
     sandi = st.text_input("Silakan Masukkan Kata Sandi:", type="password")
@@ -140,38 +164,23 @@ if st.session_state.peran is None:
             st.error("Kunci salah! Silakan coba lagi.")
     st.stop()
 
-# --- MENGHUBUNGKAN KE OTAK AI (JURUS BLOKIR VERSI 2.5) ---
+# --- MENENTUKAN KUNCI API YANG DIGUNAKAN (PRIORITAS: INPUT USER ATAU RAHASIA SYSTEM) ---
+kunci_aktif = ""
+if api_key_input:
+    kunci_aktif = api_key_input
+elif "GEMINI_API_KEY" in st.secrets:
+    kunci_aktif = st.secrets["GEMINI_API_KEY"]
+
+# --- MENGHUBUNGKAN KE OTAK AI ---
 try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    daftar_tersedia = []
-    # Membaca daftar dari Google
-    for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
-            nama_model = m.name.replace("models/", "")
-            # KITA BLOKIR VERSI 2.5 KARENA DITOLAK GOOGLE UNTUK AKUN BAPAK
-            if "2.5" not in nama_model:
-                daftar_tersedia.append(nama_model)
-                
-    # Memilih mesin terbaik yang DIIZINKAN (prioritas: flash, lalu pro)
-    mesin_aktif = None
-    for nama in daftar_tersedia:
-        if 'flash' in nama:
-            mesin_aktif = nama
-            break
-            
-    if not mesin_aktif:
-        for nama in daftar_tersedia:
-            if 'pro' in nama:
-                mesin_aktif = nama
-                break
-                
-    if not mesin_aktif and len(daftar_tersedia) > 0:
-        mesin_aktif = daftar_tersedia[0]
+    if not kunci_aktif:
+        st.error("⚠️ Silakan masukkan **API Key** pribadi Anda pada menu di bilah sisi (*sidebar*) sebelah kiri, atau pastikan Secrets sudah terpasang.")
+        st.stop()
         
-    model_ai = genai.GenerativeModel(mesin_aktif)
+    genai.configure(api_key=kunci_aktif)
+    model_ai = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
-    st.error(f"Koneksi ke sistem AI terputus. Info Error: {e}")
+    st.error(f"Koneksi ke sistem AI terputus. Pastikan API Key valid. ({e})")
     st.stop()
 
 @st.cache_data(ttl=86400, show_spinner=False)
@@ -239,7 +248,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_teks.mp3", format="audio/mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal: {e}")
+                        st.error(f"Gagal (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
             else: st.warning("Masukkan teks dulu.")
 
     # --- TAB KAMERA OBJEK ---
@@ -272,7 +281,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_objek.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal mengenali benda: {e}")
+                        st.error(f"Gagal mengenali benda (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
 
     # --- TAB BACA FOTO ---
     with tab_baca_foto:
@@ -306,7 +315,7 @@ if st.session_state.peran == "siswa":
                             st.audio("suara_baca.mp3")
                         except: pass
                     except Exception as e:
-                        st.error(f"Gagal membaca tulisan: {e}")
+                        st.error(f"Gagal membaca tulisan (Kemungkinan kuota API habis, silakan buat & masukkan API Key baru di menu kiri): {e}")
 
 # ==========================================
 # HALAMAN KHUSUS ADMIN
@@ -314,7 +323,7 @@ if st.session_state.peran == "siswa":
 elif st.session_state.peran == "admin":
     tampilkan_header_logo()
     
-    st.info(f"✅ Sistem berhasil mendeteksi dan terhubung dengan mesin yang diizinkan: **{mesin_aktif}**")
+    st.info("Selamat bekerja, Pak Saiful! Panel Admin aktif.")
     
     tab1, tab2 = st.tabs(["📝 Input Manual", "🖼️ Ekstrak dari Gambar"])
     with tab1:
