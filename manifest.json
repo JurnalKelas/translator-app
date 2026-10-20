@@ -1,0 +1,15 @@
+{
+  "short_name": "Kamus ALAZKA",
+  "name": "Kamus Pintar ALAZKA",
+  "icons": [
+    {
+      "src": "logo1.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#F5EBE6",
+  "theme_color": "#3D2C24",
+  "display": "standalone"
+}
