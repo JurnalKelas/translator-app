@@ -5,8 +5,19 @@ from gtts import gTTS
 import os
 import streamlit.components.v1 as components
 
-# --- KONFIGURASI HALAMAN UTAMA ---
-st.set_page_config(page_title="Kamus Pintar ALAZKA", page_icon="📖", layout="centered")
+# --- KONFIGURASI HALAMAN UTAMA & IKON (FAVICON) ---
+# Memuat logo1.png sebagai ikon tab browser dan shortcut HP
+try:
+    favicon_img = Image.open("logo1.png")
+except:
+    favicon_img = "📖"
+
+st.set_page_config(
+    page_title="Kamus Pintar ALAZKA", 
+    page_icon=favicon_img, 
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
 
 # --- INISIALISASI PENYIMPANAN WARNA DI SESI APLIKASI ---
 if "warna_bg" not in st.session_state:
@@ -177,16 +188,13 @@ try:
         
     genai.configure(api_key=kunci_aktif)
     
-    # Mencari daftar model yang diizinkan oleh akun ini secara dinamis
     daftar_tersedia = []
     for m in genai.list_models():
         if 'generateContent' in m.supported_generation_methods:
             nama_m = m.name.replace("models/", "")
-            # Menghindari versi 2.5 jika dibatasi oleh Google
             if "2.5" not in nama_m:
                 daftar_tersedia.append(nama_m)
                 
-    # Memilih mesin terbaik yang tersedia
     mesin_aktif = None
     for nama in daftar_tersedia:
         if 'flash' in nama:
