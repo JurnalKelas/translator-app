@@ -5,8 +5,7 @@ from gtts import gTTS
 import os
 import streamlit.components.v1 as components
 
-# --- KONFIGURASI HALAMAN UTAMA & IKON (FAVICON) ---
-# Memuat logo1.png sebagai ikon tab browser dan shortcut HP
+# --- KONFIGURASI HALAMAN UTAMA & MANIFEST ICON HP ---
 try:
     favicon_img = Image.open("logo1.png")
 except:
@@ -17,6 +16,15 @@ st.set_page_config(
     page_icon=favicon_img, 
     layout="centered",
     initial_sidebar_state="expanded"
+)
+
+# Menyisipkan tag manifest.json agar HP mendeteksi ikon logo sekolah
+st.markdown(
+    """
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3D2C24">
+    """,
+    unsafe_allow_html=True
 )
 
 # --- INISIALISASI PENYIMPANAN WARNA DI SESI APLIKASI ---
